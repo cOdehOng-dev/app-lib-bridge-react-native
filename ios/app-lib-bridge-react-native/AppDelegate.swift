@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "BridgeLib",
+      withModuleName: "app-lib-bridge-react-native",
       in: window,
       launchOptions: launchOptions
     )
