@@ -27,6 +27,7 @@ class NativeBridgeModule: RCTEventEmitter {
         )
     }
 
+    // Internal: called only by BridgeEventEmitter.shared within this module
     func emitToJS(eventName: String, data: [String: Any]) {
         sendEvent(withName: "BridgeEvent", body: ["name": eventName, "data": data])
     }

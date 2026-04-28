@@ -4,6 +4,7 @@ import Foundation
 
     @objc public static let shared = BridgeEventEmitter()
 
+    private let queue = DispatchQueue(label: "com.bridgelib.BridgeEventEmitter", attributes: .concurrent)
     private var listeners: [String: ([String: Any]) -> Void] = [:]
 
     private override init() {}
@@ -19,15 +20,15 @@ import Foundation
 
     /// RN → 네이티브 이벤트 리스너 등록
     @objc public func on(_ eventName: String, callback: @escaping ([String: Any]) -> Void) {
-        listeners[eventName] = callback
+        queue.async(flags: .barrier) { self.listeners[eventName] = callback }
     }
 
     /// RN → 네이티브 이벤트 리스너 해제
     @objc public func off(_ eventName: String) {
-        listeners.removeValue(forKey: eventName)
+        queue.async(flags: .barrier) { self.listeners.removeValue(forKey: eventName) }
     }
 
     internal func handleFromRN(name: String, data: [String: Any]) {
-        listeners[name]?(data)
+        queue.sync { self.listeners[name] }?(data)
     }
 }

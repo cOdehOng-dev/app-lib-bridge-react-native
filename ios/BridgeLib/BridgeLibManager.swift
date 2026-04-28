@@ -12,7 +12,10 @@ import React_RCTAppDelegate
 
     /// AppDelegate.application(_:didFinishLaunchingWithOptions:)에서 1회 호출
     @objc public func initialize(bundleConfig: BundleConfig) {
-        guard factory == nil else { return }
+        guard factory == nil else {
+            NSLog("[BridgeLibManager] 이미 초기화되었습니다. 두 번째 initialize() 호출은 무시됩니다.")
+            return
+        }
         let factoryDelegate = BridgeLibFactoryDelegate(bundleConfig: bundleConfig)
         self.delegate = factoryDelegate
         self.factory = RCTReactNativeFactory(delegate: factoryDelegate)

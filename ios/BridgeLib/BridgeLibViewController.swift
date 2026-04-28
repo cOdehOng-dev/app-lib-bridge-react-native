@@ -22,12 +22,13 @@ import React
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
         embedReactNativeView()
     }
 
     private func embedReactNativeView() {
         guard let bridge = BridgeLibManager.shared.getFactory().bridge else {
+            assertionFailure("[BridgeLibViewController] RCTBridge를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
             NSLog("[BridgeLibViewController] RCTBridge를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
             return
         }
