@@ -6,7 +6,7 @@
 
 **Architecture:** RN TypeScript 패키지(`src/`)는 TurboModule Codegen spec을 정의하고 이벤트 훅/유틸을 제공한다. Android 라이브러리 모듈(`android/bridge-lib/`)은 AAR로 빌드되어 네이티브 앱에 포함되며, iOS 라이브러리(`ios/BridgeLib/`)는 XCFramework로 빌드된다. CLI(`bin/bridge-lib.js`)가 빌드·배포 명령을 제공한다.
 
-**Tech Stack:** React Native 0.84.1, TypeScript, Kotlin, Swift/Objective-C++, Gradle (maven-publish), xcodebuild, commander (CLI)
+**Tech Stack:** React Native 0.84.1, TypeScript, Kotlin, Swift/Objective-C++, Gradle (maven-publish + GitHub Packages), xcodebuild, commander (CLI)
 
 ---
 
@@ -40,7 +40,8 @@ ios/BridgeLib/BridgeLibViewController.swift
 
 bin/bridge-lib.js                        ← CLI 진입점
 scripts/packageAndroid.js
-scripts/publishAndroid.js
+scripts/publishAndroid.js          ← 로컬 Maven 배포
+scripts/publishAndroidGitHub.js    ← GitHub Packages 배포 (신규)
 scripts/packageIos.js
 
 docs/rn-setup.md
@@ -405,8 +406,19 @@ afterEvaluate {
             }
         }
         repositories {
+            // 로컬 Maven (~/.m2/repository)
             maven {
+                name = 'Local'
                 url = uri(findProperty('mavenRepoPath') ?: "${System.properties['user.home']}/.m2/repository")
+            }
+            // GitHub Packages
+            maven {
+                name = 'GitHubPackages'
+                url = uri("https://maven.pkg.github.com/${findProperty('gpr.owner') ?: System.getenv('GITHUB_OWNER') ?: 'OWNER'}/${findProperty('gpr.repo') ?: System.getenv('GITHUB_REPO') ?: 'REPO'}")
+                credentials {
+                    username = findProperty('gpr.user') ?: System.getenv('GITHUB_USERNAME')
+                    password = findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
+                }
             }
         }
     }
@@ -1440,7 +1452,72 @@ function packageIos({ scheme = 'BridgeLib', configuration = 'Release', output } 
 module.exports = packageIos;
 ```
 
-- [ ] **Step 5: bin/bridge-lib.js 작성**
+- [ ] **Step 5: scripts/publishAndroidGitHub.js 작성**
+
+`scripts/publishAndroidGitHub.js`:
+
+```javascript
+'use strict';
+
+const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+function findRootDir() {
+  let dir = process.cwd();
+  while (dir !== path.parse(dir).root) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
+    dir = path.dirname(dir);
+  }
+  throw new Error('package.json을 찾을 수 없습니다.');
+}
+
+function publishAndroidGitHub({ owner, repo, token, username } = {}) {
+  const rootDir = findRootDir();
+  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  const androidDir = path.join(rootDir, 'android');
+
+  const githubOwner = owner || process.env.GITHUB_OWNER;
+  const githubRepo = repo || process.env.GITHUB_REPO;
+  const githubToken = token || process.env.GITHUB_TOKEN;
+  const githubUsername = username || process.env.GITHUB_USERNAME;
+
+  if (!githubOwner || !githubRepo) {
+    console.error('[bridge-lib] --owner와 --repo 옵션이 필요합니다. (또는 GITHUB_OWNER, GITHUB_REPO 환경변수)');
+    process.exit(1);
+  }
+  if (!githubToken) {
+    console.error('[bridge-lib] --token 옵션 또는 GITHUB_TOKEN 환경변수가 필요합니다.');
+    process.exit(1);
+  }
+
+  const packageUrl = `https://maven.pkg.github.com/${githubOwner}/${githubRepo}`;
+  console.log(`\n[bridge-lib] GitHub Packages 배포 시작 → ${packageUrl}`);
+
+  try {
+    execSync(
+      [
+        gradlew,
+        ':bridge-lib:publishReleasePublicationToGitHubPackagesRepository',
+        `-Pgpr.owner=${githubOwner}`,
+        `-Pgpr.repo=${githubRepo}`,
+        `-Pgpr.user=${githubUsername || githubOwner}`,
+        `-Pgpr.key=${githubToken}`,
+      ].join(' '),
+      { cwd: androidDir, stdio: 'inherit' }
+    );
+  } catch (err) {
+    console.error('[bridge-lib] GitHub Packages 배포 실패:', err.message);
+    process.exit(1);
+  }
+
+  console.log(`[bridge-lib] ✓ GitHub Packages 배포 완료: ${packageUrl}\n`);
+}
+
+module.exports = publishAndroidGitHub;
+```
+
+- [ ] **Step 6: bin/bridge-lib.js 작성**
 
 `bin/bridge-lib.js`:
 
@@ -1451,6 +1528,7 @@ module.exports = packageIos;
 const { program } = require('commander');
 const packageAndroid = require('../scripts/packageAndroid');
 const publishAndroid = require('../scripts/publishAndroid');
+const publishAndroidGitHub = require('../scripts/publishAndroidGitHub');
 const packageIos = require('../scripts/packageIos');
 
 program
@@ -1477,6 +1555,22 @@ program
   });
 
 program
+  .command('publish:android:github')
+  .description('Android AAR을 GitHub Packages에 배포')
+  .option('--owner <owner>', 'GitHub 저장소 오너 (또는 GITHUB_OWNER 환경변수)')
+  .option('--repo <repo>', 'GitHub 저장소 이름 (또는 GITHUB_REPO 환경변수)')
+  .option('--token <token>', 'GitHub Personal Access Token (또는 GITHUB_TOKEN 환경변수)')
+  .option('--username <username>', 'GitHub 사용자명 (기본: owner와 동일)')
+  .action((options) => {
+    publishAndroidGitHub({
+      owner: options.owner,
+      repo: options.repo,
+      token: options.token,
+      username: options.username,
+    });
+  });
+
+program
   .command('package:ios')
   .description('iOS XCFramework 빌드')
   .option('--scheme <scheme>', 'Xcode 스킴 이름', 'BridgeLib')
@@ -1493,13 +1587,13 @@ program
 program.parse(process.argv);
 ```
 
-- [ ] **Step 6: bin/bridge-lib.js 실행 권한 부여**
+- [ ] **Step 7: bin/bridge-lib.js 실행 권한 부여**
 
 ```bash
 chmod +x bin/bridge-lib.js
 ```
 
-- [ ] **Step 7: CLI 도움말 동작 확인**
+- [ ] **Step 8: CLI 도움말 동작 확인**
 
 ```bash
 node bin/bridge-lib.js --help
@@ -1512,21 +1606,22 @@ Usage: bridge-lib [options] [command]
 bridge-lib 빌드 및 배포 CLI
 
 Options:
-  -V, --version     output the version number
-  -h, --help        display help for command
+  -V, --version           output the version number
+  -h, --help              display help for command
 
 Commands:
-  package:android   Android AAR 빌드
-  publish:android   Android AAR을 로컬 Maven에 배포
-  package:ios       iOS XCFramework 빌드
-  help [command]    display help for command
+  package:android         Android AAR 빌드
+  publish:android         Android AAR을 로컬 Maven에 배포
+  publish:android:github  Android AAR을 GitHub Packages에 배포
+  package:ios             iOS XCFramework 빌드
+  help [command]          display help for command
 ```
 
-- [ ] **Step 8: 커밋**
+- [ ] **Step 9: 커밋**
 
 ```bash
 git add bin/ scripts/
-git commit -m "feat: add CLI tools (package:android, publish:android, package:ios)"
+git commit -m "feat: add CLI tools (package:android, publish:android, publish:android:github, package:ios)"
 ```
 
 ---
@@ -1658,6 +1753,24 @@ npx bridge-lib package:android --variant Release --module-name reactnativeapp
 npx bridge-lib publish:android --module-name reactnativeapp
 ```
 
+## 2-1. GitHub Packages 배포 (선택)
+
+```bash
+# 환경변수 방식
+export GITHUB_OWNER=your-org
+export GITHUB_REPO=app-lib-bridge-react-native
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+npx bridge-lib publish:android:github
+
+# 옵션 직접 전달 방식
+npx bridge-lib publish:android:github \
+  --owner your-org \
+  --repo app-lib-bridge-react-native \
+  --token ghp_xxxxxxxxxxxx
+```
+
+> **GitHub Token 권한:** `write:packages` 권한이 필요하다. GitHub Settings > Developer settings > Personal access tokens에서 발급.
+
 ## 3. 호스트 앱에 AAR 추가
 
 ### 방법 A: 파일 직접 추가
@@ -1684,6 +1797,44 @@ dependencies {
     implementation 'com.bridgelib:bridge-lib:1.0.0'
 }
 ```
+
+### 방법 C: GitHub Packages 사용
+
+`settings.gradle`에 저장소 추가:
+
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/your-org/app-lib-bridge-react-native")
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull
+                    ?: System.getenv("GITHUB_USERNAME")
+                password = providers.gradleProperty("gpr.key").orNull
+                    ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+```
+
+`~/.gradle/gradle.properties`에 인증 정보 추가 (1회 설정):
+
+```properties
+gpr.user=your-github-username
+gpr.key=ghp_xxxxxxxxxxxx
+```
+
+`build.gradle`에 의존성 추가:
+
+```groovy
+dependencies {
+    implementation 'com.bridgelib:bridge-lib:1.0.0'
+}
+```
+
+> **GitHub Token 권한:** `read:packages` 권한이 필요하다.
 
 ## 4. AndroidManifest.xml 설정
 
@@ -1924,6 +2075,7 @@ git commit -m "docs: add rn-setup, android-integration, ios-integration guides"
 | 네이티브 ↔ RN 양방향 이벤트 | Task 6, 7, 13, 14 |
 | 번들 로딩 전략 (dev/assets/OTA) | Task 5, 8, 12 |
 | CLI package:android | Task 17 |
-| CLI publish:android | Task 17 |
+| CLI publish:android (로컬 Maven) | Task 17 |
+| CLI publish:android:github (GitHub Packages) | Task 17 |
 | CLI package:ios | Task 17 |
 | 문서 3종 | Task 18 |
