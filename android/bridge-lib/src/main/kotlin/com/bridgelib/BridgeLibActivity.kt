@@ -47,6 +47,7 @@ class BridgeLibActivity : AppCompatActivity() {
             val intent = Intent(context, BridgeLibActivity::class.java).apply {
                 putExtra(EXTRA_MODULE_NAME, moduleName)
                 initialProps?.let { putExtra(EXTRA_INITIAL_PROPS, it) }
+                if (context !is android.app.Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
         }

@@ -1,11 +1,13 @@
 package com.bridgelib
 
+import java.util.concurrent.ConcurrentHashMap
+
 object BridgeEventBus {
 
     @Volatile
     private var moduleRef: NativeBridgeModule? = null
 
-    private val listeners = mutableMapOf<String, (Map<String, Any?>) -> Unit>()
+    private val listeners = ConcurrentHashMap<String, (Map<String, Any?>) -> Unit>()
 
     internal fun setModule(module: NativeBridgeModule?) {
         moduleRef = module
@@ -13,7 +15,7 @@ object BridgeEventBus {
 
     fun send(eventName: String, data: Map<String, Any?> = emptyMap()) {
         checkNotNull(moduleRef) {
-            "React Native is not running. BridgeLibHost.init()가 호출되었는지 확인하세요."
+            "NativeBridgeModule이 초기화되지 않았습니다. React Native가 아직 로딩 중일 수 있습니다."
         }.emitToJS(eventName, data)
     }
 

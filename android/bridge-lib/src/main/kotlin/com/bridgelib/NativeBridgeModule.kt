@@ -42,6 +42,7 @@ class NativeBridgeModule(reactContext: ReactApplicationContext) :
     }
 
     internal fun emitToJS(eventName: String, data: Map<String, Any?>) {
+        if (!reactApplicationContext.hasActiveReactInstance()) return
         val params = Arguments.createMap().apply {
             putString("name", eventName)
             val dataMap = Arguments.createMap()
@@ -52,7 +53,8 @@ class NativeBridgeModule(reactContext: ReactApplicationContext) :
                     is Double -> dataMap.putDouble(key, value)
                     is Boolean -> dataMap.putBoolean(key, value)
                     is Long -> dataMap.putDouble(key, value.toDouble())
-                    else -> dataMap.putString(key, value?.toString())
+                    null -> dataMap.putNull(key)
+                    else -> dataMap.putString(key, value.toString())
                 }
             }
             putMap("data", dataMap)

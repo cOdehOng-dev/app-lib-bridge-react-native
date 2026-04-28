@@ -15,13 +15,14 @@ object BridgeLibHost {
     fun init(
         application: Application,
         bundleConfig: BundleConfig,
-        packages: List<ReactPackage> = emptyList()
+        packages: List<ReactPackage> = emptyList(),
+        jsMainModulePath: String = "index"
     ) {
         if (reactHost != null) return
 
         SoLoader.init(application, OpenSourceMergedSoMapping)
 
-        val delegate = BridgeLibHostDelegate(bundleConfig, packages)
+        val delegate = BridgeLibHostDelegate(bundleConfig, packages, jsMainModulePath)
         reactHost = DefaultReactHost.getDefaultReactHost(
             context = application,
             reactHostDelegate = delegate
