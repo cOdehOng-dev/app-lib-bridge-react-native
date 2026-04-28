@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { NativeEventEmitter, NativeModules } from 'react-native';
 import NativeBridgeModule from './specs/NativeBridgeModule';
 
@@ -8,6 +8,9 @@ export function useBridgeEvent(
   eventName: string,
   callback: (data: Record<string, unknown>) => void
 ): void {
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
   useEffect(() => {
     NativeBridgeModule.addListener('BridgeEvent');
 
@@ -15,7 +18,7 @@ export function useBridgeEvent(
       'BridgeEvent',
       (event: { name: string; data: Record<string, unknown> }) => {
         if (event.name === eventName) {
-          callback(event.data);
+          callbackRef.current(event.data);
         }
       }
     );
@@ -24,5 +27,5 @@ export function useBridgeEvent(
       subscription.remove();
       NativeBridgeModule.removeListeners(1);
     };
-  }, [eventName, callback]);
+  }, [eventName]);
 }
