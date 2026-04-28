@@ -66,6 +66,12 @@ yarn-error.log
 # testing
 /coverage
 
+# Git worktrees
+.worktrees/
+
+# Build outputs
+output/
+
 # Yarn
 .yarn/*
 !.yarn/patches
