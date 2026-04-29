@@ -6,15 +6,15 @@
 
 ```bash
 # AAR 빌드 + 로컬 Maven 배포
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
 
 # AAR만 빌드 (Maven 배포 제외)
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp --skip-maven
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib --skip-maven
 ```
 
 > CLI 명령어는 [rn-setup.md — 섹션 5](./rn-setup.md#5-번들-빌드-및-네이티브-패키징)를 참고하세요.
 
-결과물: `output/android/reactnativeapp-release.aar`
+결과물: `output/android/bridgelib-release.aar`
 
 ## 3. 호스트 앱에 AAR 추가
 

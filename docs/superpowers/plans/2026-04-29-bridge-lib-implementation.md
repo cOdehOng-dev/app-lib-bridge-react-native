@@ -1648,15 +1648,15 @@ react-native bundle \
 bridge-lib 레포에서:
 
 ```bash
-npx bridge-lib package:android --variant Release --module-name reactnativeapp
+npx bridge-lib package:android --variant Release --module-name bridgelib
 ```
 
-결과물: `output/android/reactnativeapp-release.aar`
+결과물: `output/android/bridgelib-release.aar`
 
 ## 2. 로컬 Maven 배포 (선택)
 
 ```bash
-npx bridge-lib publish:android --module-name reactnativeapp
+npx bridge-lib publish:android --module-name bridgelib
 ```
 
 ## 3. 호스트 앱에 AAR 추가

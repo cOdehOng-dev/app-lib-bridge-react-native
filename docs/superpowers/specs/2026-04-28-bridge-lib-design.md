@@ -258,13 +258,13 @@ BridgeLib.version      // 라이브러리 버전
 
 ```bash
 # AAR 빌드
-npx bridge-lib package:android --variant Release --module-name reactnativeapp
+npx bridge-lib package:android --variant Release --module-name bridgelib
 
 # 로컬 Maven 배포
-npx bridge-lib publish:android --module-name reactnativeapp
+npx bridge-lib publish:android --module-name bridgelib
 
 # 경로 지정
-npx bridge-lib publish:android --module-name reactnativeapp --repo ~/.m2/repository
+npx bridge-lib publish:android --module-name bridgelib --repo ~/.m2/repository
 ```
 
 ### iOS

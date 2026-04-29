@@ -83,6 +83,7 @@ function PaymentButton() {
 ### Android
 
 **sh 스크립트 (권장)**
+
 ```bash
 # AAR 빌드 + 로컬 Maven 배포
 ./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
@@ -92,6 +93,7 @@ function PaymentButton() {
 ```
 
 **CLI**
+
 ```bash
 # AAR 빌드
 npx hongfield package:android --variant Release --module-name bridgelib
@@ -103,11 +105,13 @@ npx hongfield publish:android --module-name bridgelib
 ### iOS
 
 **sh 스크립트 (권장)**
+
 ```bash
 ./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
 ```
 
 **CLI**
+
 ```bash
 npx hongfield package:ios --scheme BridgeLib --configuration Release
 ```
