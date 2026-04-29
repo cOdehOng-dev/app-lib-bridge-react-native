@@ -131,8 +131,8 @@ BridgeEventBus.off("PAYMENT_DONE")
 `android/bridge-lib` 모듈에 `maven-publish` 플러그인을 적용하여 로컬 Maven에 배포한다.
 
 ```
-groupId: com.bridgelib
-artifactId: bridge-lib
+groupId: com.nol.lib.reactnative
+artifactId: bridgeLib
 version: 1.0.0
 ```
 
