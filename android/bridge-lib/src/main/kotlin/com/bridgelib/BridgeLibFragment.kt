@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.facebook.react.ReactDelegate
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
@@ -11,6 +12,16 @@ import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 class BridgeLibFragment : Fragment() {
 
     private var reactDelegate: ReactDelegate? = null
+    private var backCallback: OnBackPressedCallback? = null
+
+    var onPopRequested: (() -> Unit)? = null
+
+    @Volatile private var backEnabled: Boolean = true
+
+    fun setBackEnabled(enabled: Boolean) {
+        backEnabled = enabled
+        backCallback?.isEnabled = !enabled
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,6 +42,16 @@ class BridgeLibFragment : Fragment() {
         )
         reactDelegate = delegate
         delegate.loadApp()
+
+        backCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                // backEnabled=false 일 때 활성화되어 뒤로가기를 삼킴 (RN 내부 스택 처리)
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback!!)
+
+        BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() }
+
         return checkNotNull(delegate.reactRootView) {
             "ReactDelegate.reactRootView이 null입니다."
         }
@@ -49,6 +70,7 @@ class BridgeLibFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        BridgeEventBus.setPopToNativeCallback(null)
         reactDelegate?.unloadApp()
         reactDelegate = null
         super.onDestroyView()

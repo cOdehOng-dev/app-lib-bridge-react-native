@@ -41,6 +41,11 @@ class NativeBridgeModule(reactContext: ReactApplicationContext) :
         // NativeEventEmitter 요구 사항
     }
 
+    @ReactMethod
+    fun popToNative() {
+        BridgeEventBus.handlePopToNative()
+    }
+
     internal fun emitToJS(eventName: String, data: Map<String, Any?>) {
         if (!reactApplicationContext.hasActiveReactInstance()) return
         val params = Arguments.createMap().apply {

@@ -11,6 +11,14 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
 
     private var reactDelegate: ReactDelegate? = null
 
+    var onPopRequested: (() -> Unit)? = null
+
+    @Volatile private var backEnabled: Boolean = true
+
+    fun setBackEnabled(enabled: Boolean) {
+        backEnabled = enabled
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -29,11 +37,19 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
             delegate.loadApp()
             setContentView(delegate.reactRootView)
         }
+
+        BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
     }
 
     override fun invokeDefaultOnBackPressed() {
         @Suppress("DEPRECATION")
         super.onBackPressed()
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (!backEnabled) return
+        reactDelegate?.onBackPressed()
     }
 
     override fun onResume() {
@@ -47,6 +63,7 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
     }
 
     override fun onDestroy() {
+        BridgeEventBus.setPopToNativeCallback(null)
         reactDelegate?.onHostDestroy()
         reactDelegate = null
         super.onDestroy()
