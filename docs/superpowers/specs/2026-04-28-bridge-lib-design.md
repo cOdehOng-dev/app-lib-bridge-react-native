@@ -284,7 +284,7 @@ npx bridge-lib package:ios --scheme BridgeLib --configuration Release --output .
 2. 생성된 AAR을 `./output/android/{module-name}-release.aar`로 복사
 
 **publish:android**
-1. `./gradlew :bridge-lib:publishToMavenLocal` 실행
+1. `./gradlew :bridge-lib:publishMavenAarPublicationToLocalRepository` 실행
 2. `~/.m2/repository/com/nol/lib/reactnative/bridgeLib/` 에 설치됨
 
 **package:ios**
