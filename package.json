@@ -6,11 +6,13 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "hongfield": "bin/bridge-lib.js"
   },
   "files": [
+    "dist/",
     "src/",
     "bin/",
     "scripts/",
@@ -23,6 +25,7 @@
     "jsSrcsDir": "src/specs"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.lib.json",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",
