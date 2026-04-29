@@ -78,22 +78,14 @@ function PaymentButton() {
 
 ## 5. 번들 빌드
 
-```bash
-# Android 번들
-react-native bundle \
-  --platform android \
-  --dev false \
-  --entry-file index.js \
-  --bundle-output android/app/src/main/assets/index.android.bundle \
-  --assets-dest android/app/src/main/res
+번들 빌드는 AAR / XCFramework 빌드 시 자동으로 실행됩니다. 별도 실행 불필요합니다.
 
-# iOS 번들
-react-native bundle \
-  --platform ios \
-  --dev false \
-  --entry-file index.js \
-  --bundle-output ios/main.jsbundle \
-  --assets-dest ios
+```bash
+# Android - 번들 포함 AAR 빌드
+./node_modules/@codehong-dev/hongfield/package-android.sh
+
+# iOS - 번들 포함 XCFramework 빌드
+./node_modules/@codehong-dev/hongfield/package-ios.sh
 ```
 
 ## 6. Codegen 설정 확인
