@@ -1,11 +1,14 @@
 {
-  "name": "nol-react-native-bridge",
+  "name": "@cOdehOng-dev/hongfield",
   "version": "1.0.0",
   "description": "Native-React Native bridge library for Android and iOS",
   "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "src/index.ts",
   "bin": {
-    "nol-react-native-bridge": "bin/bridge-lib.js"
+    "hongfield": "bin/bridge-lib.js"
   },
   "files": [
     "src/",
