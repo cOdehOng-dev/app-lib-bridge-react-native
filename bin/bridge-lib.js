@@ -7,8 +7,8 @@ const publishAndroid = require('../scripts/publishAndroid');
 const packageIos = require('../scripts/packageIos');
 
 program
-  .name('nol-react-native-bridge')
-  .description('nol-react-native-bridge 빌드 및 배포 CLI')
+  .name('hongfield')
+  .description('hongfield 빌드 및 배포 CLI')
   .version('1.0.0');
 
 program
