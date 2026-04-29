@@ -20,19 +20,22 @@ object BridgeLibHost {
         jsMainModulePath: String = "index"
     ) {
         if (reactHost != null) return
+        synchronized(this) {
+            if (reactHost != null) return
 
-        val isDebug = bundleConfig.isDebug
-            ?: (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            val isDebug = bundleConfig.isDebug
+                ?: (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
-        SoLoader.init(application, OpenSourceMergedSoMapping)
+            SoLoader.init(application, OpenSourceMergedSoMapping)
 
-        reactHost = DefaultReactHost.getDefaultReactHost(
-            context = application,
-            packageList = packages + listOf(BridgeLibPackage()),
-            jsMainModulePath = jsMainModulePath,
-            jsBundleAssetPath = if (isDebug) null else bundleConfig.assetPath,
-            jsBundleFilePath = bundleConfig.localBundlePath
-        )
+            reactHost = DefaultReactHost.getDefaultReactHost(
+                context = application,
+                packageList = packages + listOf(BridgeLibPackage()),
+                jsMainModulePath = jsMainModulePath,
+                jsBundleAssetPath = bundleConfig.assetPath,
+                jsBundleFilePath = bundleConfig.localBundlePath
+            )
+        }
     }
 
     fun getReactHost(): ReactHost = reactHost

@@ -1,22 +1,38 @@
 package com.bridgelib
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 object BridgeEventBus {
 
     @Volatile
     private var moduleRef: NativeBridgeModule? = null
 
+    private val pendingQueue = ConcurrentLinkedQueue<Pair<String, Map<String, Any?>>>()
     private val listeners = ConcurrentHashMap<String, (Map<String, Any?>) -> Unit>()
+
+    @Volatile
+    private var popToNativeCallback: (() -> Unit)? = null
 
     internal fun setModule(module: NativeBridgeModule?) {
         moduleRef = module
+        if (module != null) flushQueue()
+    }
+
+    private fun flushQueue() {
+        while (true) {
+            val item = pendingQueue.poll() ?: break
+            moduleRef?.emitToJS(item.first, item.second)
+        }
     }
 
     fun send(eventName: String, data: Map<String, Any?> = emptyMap()) {
-        checkNotNull(moduleRef) {
-            "NativeBridgeModule이 초기화되지 않았습니다. React Native가 아직 로딩 중일 수 있습니다."
-        }.emitToJS(eventName, data)
+        val module = moduleRef
+        if (module != null) {
+            module.emitToJS(eventName, data)
+        } else {
+            pendingQueue.offer(Pair(eventName, data))
+        }
     }
 
     fun on(eventName: String, listener: (Map<String, Any?>) -> Unit) {
@@ -29,5 +45,13 @@ object BridgeEventBus {
 
     internal fun handleFromRN(eventName: String, data: HashMap<String, Any?>) {
         listeners[eventName]?.invoke(data)
+    }
+
+    internal fun handlePopToNative() {
+        popToNativeCallback?.invoke()
+    }
+
+    internal fun setPopToNativeCallback(callback: (() -> Unit)?) {
+        popToNativeCallback = callback
     }
 }
