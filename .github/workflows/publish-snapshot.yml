@@ -1,0 +1,70 @@
+name: Publish hongfield(스냅샷 배포)
+
+# 트리거 1: develop 브랜치 머지 → package.json version 기반 스냅샷 배포
+# 트리거 2: feature/** 브랜치 머지 → package.json version 기반 스냅샷 배포
+# 트리거 3: snap_v* 태그 push (예: snap_v1.0.0) → 태그 버전 기반 스냅샷 배포
+# 버전 형식: {base}-SNAPSHOT.{YYYYMMDDHHMMSS}  예) 1.0.0-SNAPSHOT.20260429143000
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+    paths:
+      - 'src/**'
+    tags:
+      - 'snap_v*'
+
+jobs:
+  publish-snapshot:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@codehong-dev'
+
+      # 태그 push면 태그에서 base 버전 파싱, 브랜치 push면 package.json version 사용
+      - name: Resolve base version
+        id: base
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "BASE=${GITHUB_REF_NAME#snap_v}" >> $GITHUB_OUTPUT
+            echo "SOURCE=tag" >> $GITHUB_OUTPUT
+          else
+            echo "BASE=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+            echo "SOURCE=package.json" >> $GITHUB_OUTPUT
+          fi
+
+      # SNAPSHOT 버전 생성 (예: 1.0.0-SNAPSHOT.20260429143000)
+      - name: Generate snapshot version
+        id: snapshot
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+          echo "VERSION=${{ steps.base.outputs.BASE }}-SNAPSHOT.${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+      # package.json에 스냅샷 버전 적용
+      - name: Set snapshot version
+        run: npm version ${{ steps.snapshot.outputs.VERSION }} --no-git-tag-version
+
+      # snapshot dist-tag로 배포
+      - name: Publish snapshot
+        run: npm publish --tag snapshot
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Snapshot Published" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.snapshot.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Source**: ${{ steps.base.outputs.SOURCE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **dist-tag**: snapshot" >> $GITHUB_STEP_SUMMARY
