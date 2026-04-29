@@ -29,12 +29,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: version must be in semver format (e.g. 1.0.0)"
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@codehong-dev'
+
+      - name: Install dependencies
+        run: npm ci
 
       # snapshot이면 타임스탬프 suffix 붙이기
       - name: Resolve final version

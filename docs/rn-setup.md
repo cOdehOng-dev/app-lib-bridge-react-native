@@ -13,6 +13,8 @@
 
 `YOUR_GITHUB_TOKEN`은 GitHub → Settings → Developer settings → Personal access tokens에서 `read:packages` 권한으로 발급한다.
 
+> 주의: `.npmrc` 파일을 `.gitignore`에 추가하거나, 환경 변수 방식(`_authToken=${GITHUB_TOKEN}`)을 사용하세요. 토큰을 하드코딩한 채 커밋하지 마세요.
+
 ### 패키지 설치
 
 ```bash

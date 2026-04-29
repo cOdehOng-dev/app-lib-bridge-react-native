@@ -29,9 +29,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@codehong-dev'
+
+      - name: Install dependencies
+        run: npm ci
 
       # 태그 push면 태그에서 base 버전 파싱, 브랜치 push면 package.json version 사용
       - name: Resolve base version
