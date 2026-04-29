@@ -126,13 +126,29 @@ npm publish
 
 ---
 
-## CLI
+## CLI (소비앱에서 실행)
 
+Brownfield 구조에서 소비앱(네이티브 Android/iOS 앱)이 React Native를 임베드할 때 사용합니다.
 패키지를 설치하면 `hongfield` CLI가 자동으로 등록됩니다.
+
+**전체 흐름**
+
+```
+소비앱에서 npm install @codehong-dev/hongfield
+  └─ npx hongfield package:android
+       ├─ JS 번들 → android/app/src/main/assets/index.android.bundle
+       └─ AAR     → output/android/bridge-lib-release.aar (네이티브 프로젝트에 통합)
+
+  └─ npx hongfield package:ios
+       ├─ JS 번들 → ios/main.jsbundle
+       └─ XCFramework → output/ios/BridgeLib.xcframework (네이티브 프로젝트에 통합)
+```
+
+---
 
 ### Android AAR 빌드
 
-JS 번들 빌드 → AAR 빌드 순서로 자동 실행됩니다.
+소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 순서로 자동 실행됩니다.
 
 ```bash
 npx hongfield package:android
@@ -157,6 +173,8 @@ npx hongfield package:android --module-name my-lib
 
 ### Android 로컬 Maven 배포
 
+AAR을 로컬 Maven(`~/.m2`)에 배포합니다. 소비앱의 네이티브 Android 프로젝트에서 Maven 의존성으로 참조할 수 있습니다.
+
 ```bash
 npx hongfield publish:android
 ```
@@ -170,7 +188,7 @@ npx hongfield publish:android
 
 ### iOS XCFramework 빌드
 
-JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
+소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
 
 ```bash
 npx hongfield package:ios
