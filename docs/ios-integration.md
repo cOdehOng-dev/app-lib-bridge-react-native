@@ -8,7 +8,7 @@
 ./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
 ```
 
-> CLI 명령어는 [rn-setup.md — 섹션 5](./rn-setup.md#5-번들-빌드-및-네이티브-패키징)를 참고하세요.
+> CLI 명령어는 [rn-setup.md — 섹션 6](./rn-setup.md#6-번들-빌드-및-네이티브-패키징)를 참고하세요.
 
 결과물: `output/ios/BridgeLib.xcframework`
 
@@ -136,6 +136,8 @@ BridgeEventEmitter.shared.on("ORDER_UPDATED") { data in
 // 리스너 해제
 BridgeEventEmitter.shared.off("PAYMENT_DONE")
 ```
+
+> **주의:** `BridgeEventEmitter.shared.send()`는 RN이 초기화되기 전에 호출하면 이벤트가 드롭됩니다. Android의 `BridgeEventBus`와 달리 iOS에는 이벤트 버퍼링이 없으므로 `BridgeLibManager.shared.initialize()` 완료 이후에 호출하세요.
 
 ## 7. OTA 번들 설정
 

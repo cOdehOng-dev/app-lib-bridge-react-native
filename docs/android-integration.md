@@ -8,7 +8,7 @@
 ./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
 ```
 
-> CLI 명령어는 [rn-setup.md — 섹션 5](./rn-setup.md#5-번들-빌드-및-네이티브-패키징)를 참고하세요.
+> CLI 명령어는 [rn-setup.md — 섹션 6](./rn-setup.md#6-번들-빌드-및-네이티브-패키징)를 참고하세요.
 
 결과물: `output/android/bridgelib-release.aar`
 
@@ -130,15 +130,21 @@ supportFragmentManager.beginTransaction()
 
 RN이 `popToNative()`를 호출했을 때 실행될 콜백을 등록한다.
 
-**Activity:**
-```kotlin
-val intent = Intent(this, BridgeLibActivity::class.java).apply {
-    putExtra(BridgeLibActivity.EXTRA_MODULE_NAME, "HomeScreen")
-}
-startActivity(intent)
+**Activity (기본 동작):**
 
-// 또는 서브클래싱 없이 직접 인스턴스 접근이 필요한 경우:
-// BridgeLibActivity를 상속하고 onCreate에서 onPopRequested를 설정
+`onPopRequested`가 null이면 기본 동작으로 `finish()`가 호출된다. 별도 처리가 필요한 경우에만 서브클래싱한다.
+
+```kotlin
+// 기본: finish()로 자동 종료
+BridgeLibActivity.start(context = this, moduleName = "HomeScreen")
+
+// 커스텀: 서브클래싱으로 onPopRequested 설정
+class HomeActivity : BridgeLibActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        onPopRequested = { finish() } // 커스텀 동작
+        super.onCreate(savedInstanceState)
+    }
+}
 ```
 
 **Fragment:**
@@ -154,12 +160,16 @@ supportFragmentManager.beginTransaction()
 
 ### Back 버튼 제어
 
-```kotlin
-// RN 내부 스택이 소진될 때까지 네이티브 뒤로가기 비활성화
-fragment.setBackEnabled(false)
+Activity와 Fragment 모두 `setBackEnabled()`를 지원한다.
 
-// 네이티브 뒤로가기 재활성화
-fragment.setBackEnabled(true)
+```kotlin
+// Fragment
+fragment.setBackEnabled(false) // RN 내부 스택이 소진될 때까지 네이티브 뒤로가기 비활성화
+fragment.setBackEnabled(true)  // 네이티브 뒤로가기 재활성화
+
+// Activity (서브클래스에서)
+setBackEnabled(false)
+setBackEnabled(true)
 ```
 
 ## 6. 이벤트 통신
