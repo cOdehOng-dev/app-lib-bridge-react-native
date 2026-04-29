@@ -19,18 +19,18 @@ end
 target 'app-lib-bridge-react-native' do
   config = use_native_modules!
 
-  # BridgeLib framework target — inherits all pod dependencies for XCFramework packaging.
-  # PREREQUISITE: Create the 'BridgeLib' Framework target in Xcode first (see docs/rn-setup.md §7).
-  # After creating the target, run `pod install` again.
-  target 'BridgeLib' do
-    inherit! :complete
-  end
-
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+
+  # BridgeLib framework target — inherits all pod dependencies for XCFramework packaging.
+  # PREREQUISITE: Create the 'BridgeLib' Framework target in Xcode first (see docs/rn-setup.md).
+  # After creating the target, run `pod install` again.
+  target 'BridgeLib' do
+    inherit! :complete
+  end
 
   post_install do |installer|
     react_native_post_install(
