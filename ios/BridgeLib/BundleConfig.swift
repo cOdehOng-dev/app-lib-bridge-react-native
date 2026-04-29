@@ -29,7 +29,7 @@ import React
         if let localURL = localBundleURL {
             return localURL
         }
-        return Bundle.main.url(forResource: assetName, withExtension: "jsbundle")
+        return BridgeLibBundle.url(forResource: assetName, withExtension: "jsbundle")
         #endif
     }
 }
