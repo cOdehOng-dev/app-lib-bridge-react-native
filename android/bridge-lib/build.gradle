@@ -91,7 +91,7 @@ tasks.register("removeDependenciesFromModuleFile") {
     doLast {
         def moduleFile = file("${layout.buildDirectory.get()}/publications/mavenAar/module.json")
         if (moduleFile.exists()) {
-            def json = new groovy.json.JsonSlurper().parse(moduleFile)
+            def json = new groovy.json.JsonSlurperClassic().parse(moduleFile)
             json.variants?.each { variant ->
                 // Same logic as POM cleanup: remove autolinked native module project references.
                 variant.dependencies?.removeAll { it.group == rootProject.name }
