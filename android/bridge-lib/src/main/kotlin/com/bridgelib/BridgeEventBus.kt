@@ -16,13 +16,13 @@ object BridgeEventBus {
 
     internal fun setModule(module: NativeBridgeModule?) {
         moduleRef = module
-        if (module != null) flushQueue()
+        if (module != null) flushQueue(module)
     }
 
-    private fun flushQueue() {
+    private fun flushQueue(module: NativeBridgeModule) {
         while (true) {
             val item = pendingQueue.poll() ?: break
-            moduleRef?.emitToJS(item.first, item.second)
+            module.emitToJS(item.first, item.second)
         }
     }
 
