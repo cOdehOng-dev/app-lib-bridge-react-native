@@ -5,7 +5,11 @@
 bridge-lib 레포에서:
 
 ```bash
-npx bridge-lib package:android --variant Release --module-name reactnativeapp
+# npm
+npx nol-react-native-bridge package:android --variant Release --module-name reactnativeapp
+
+# yarn
+yarn nol-react-native-bridge package:android --variant Release --module-name reactnativeapp
 ```
 
 결과물: `output/android/reactnativeapp-release.aar`
@@ -13,7 +17,11 @@ npx bridge-lib package:android --variant Release --module-name reactnativeapp
 ## 2. 로컬 Maven 배포 (선택)
 
 ```bash
-npx bridge-lib publish:android --module-name reactnativeapp
+# npm
+npx nol-react-native-bridge publish:android --module-name reactnativeapp
+
+# yarn
+yarn nol-react-native-bridge publish:android --module-name reactnativeapp
 ```
 
 ## 3. 호스트 앱에 AAR 추가

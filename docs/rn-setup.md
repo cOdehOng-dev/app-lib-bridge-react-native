@@ -4,10 +4,16 @@
 
 ```bash
 # npm
-npm install bridge-lib
+npm install nol-react-native-bridge
 
-# 또는 로컬 경로로 참조
+# yarn
+yarn add nol-react-native-bridge
+
+# 또는 로컬 경로로 참조 (npm)
 npm install /path/to/app-lib-bridge-react-native
+
+# 또는 로컬 경로로 참조 (yarn)
+yarn add /path/to/app-lib-bridge-react-native
 ```
 
 ## 2. 컴포넌트 등록
@@ -30,7 +36,7 @@ AppRegistry.registerComponent('PaymentScreen', () => PaymentScreen);
 ## 3. 이벤트 구독 (네이티브 → RN)
 
 ```typescript
-import { useBridgeEvent } from 'bridge-lib';
+import { useBridgeEvent } from 'nol-react-native-bridge';
 
 function HomeScreen() {
   useBridgeEvent('USER_LOGGED_IN', (data) => {
@@ -44,7 +50,7 @@ function HomeScreen() {
 ## 4. 이벤트 전송 (RN → 네이티브)
 
 ```typescript
-import { sendToNative } from 'bridge-lib';
+import { sendToNative } from 'nol-react-native-bridge';
 
 function PaymentButton() {
   const handlePress = () => {
@@ -128,4 +134,12 @@ Xcode는 JS 번들을 framework에 포함시키기 위한 스크립트를 자동
 
 Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 이름으로 생성
 
-이후 `npx bridge-lib package:ios --scheme BridgeLib --configuration Release` 명령어로 XCFramework를 빌드한다.
+이후 아래 명령어로 XCFramework를 빌드한다:
+
+```bash
+# npm
+npx nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
+
+# yarn
+yarn nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
+```

@@ -5,7 +5,11 @@
 bridge-lib 레포에서 (Xcode 스킴 `BridgeLib` 설정 후):
 
 ```bash
-npx bridge-lib package:ios --scheme BridgeLib --configuration Release
+# npm
+npx nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
+
+# yarn
+yarn nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
 ```
 
 결과물: `output/ios/BridgeLib.xcframework`
