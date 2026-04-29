@@ -24,7 +24,7 @@
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
     implementation 'com.facebook.react:react-android:0.84.1'
-    implementation 'com.facebook.react:hermes-android:0.84.1'
+    implementation 'com.facebook.hermes:hermes-android:250829098.0.9'
 }
 ```
 
@@ -34,13 +34,13 @@ dependencies {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation("com.facebook.react:react-android:0.84.1")
-    implementation("com.facebook.react:hermes-android:0.84.1")
+    implementation("com.facebook.hermes:hermes-android:250829098.0.9")
 }
 ```
 
 ### 방법 B: 로컬 Maven 사용
 
-AAR은 `react-android` / `hermes-android` 의존성을 번들에 포함하지 않으므로, 소비앱이 React Native Maven 저장소를 직접 선언해야 한다.
+`react-android` / `hermes-android`는 RN 0.71+부터 Maven Central에 직접 배포된다. `mavenCentral()`과 로컬 m2 저장소만 선언하면 된다.
 
 **settings.gradle (Groovy)**
 
@@ -50,10 +50,6 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url "${System.properties['user.home']}/.m2/repository" }
-
-        // React Native 의존성 저장소 (필수)
-        maven { url "$rootDir/../node_modules/react-native/android" }
-        maven { url "$rootDir/../node_modules/jsc-android/dist" }
     }
 }
 ```
@@ -66,10 +62,6 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = uri("${System.getProperty("user.home")}/.m2/repository") }
-
-        // React Native 의존성 저장소 (필수)
-        maven { url = uri("$rootDir/../node_modules/react-native/android") }
-        maven { url = uri("$rootDir/../node_modules/jsc-android/dist") }
     }
 }
 ```
@@ -79,8 +71,6 @@ dependencyResolutionManagement {
 ```groovy
 dependencies {
     implementation 'com.hong.lib:hongfield:1.0.0' // publish:android --version 에 지정한 버전
-    implementation 'com.facebook.react:react-android:0.84.1'
-    implementation 'com.facebook.react:hermes-android:0.84.1'
 }
 ```
 
@@ -89,12 +79,10 @@ dependencies {
 ```kotlin
 dependencies {
     implementation("com.hong.lib:hongfield:1.0.0") // publish:android --version 에 지정한 버전
-    implementation("com.facebook.react:react-android:0.84.1")
-    implementation("com.facebook.react:hermes-android:0.84.1")
 }
 ```
 
-> **경로 조정:** `node_modules`가 소비앱 루트 기준 `../` 위치에 없다면 실제 경로로 수정한다. `react-android` / `hermes-android` 버전은 hongfield 라이브러리가 빌드된 RN 버전과 일치해야 한다.
+> `react-android` / `hermes-android`는 hongfield POM에 명시되어 있어 Gradle이 Maven Central에서 자동으로 받아온다. 직접 선언할 필요 없다.
 
 ## 3. AndroidManifest.xml 설정
 
@@ -258,19 +246,31 @@ BridgeLibHost.init(
 
 ## 8. 트러블슈팅
 
-### Could not find com.facebook.react:react-android / hermes-android
+### Could not find com.facebook.react:react-android:.
 
 ```
 Could not resolve all files for configuration ':mobile:prdDebugRuntimeClasspath'.
   > Could not find com.facebook.react:react-android:.
     Required by: project :mobile > com.hong.lib:hongfield:x.x.x
-  > Could not find com.facebook.react:hermes-android:.
+  > Could not find com.facebook.hermes:hermes-android:.
     Required by: project :mobile > com.hong.lib:hongfield:x.x.x
 ```
 
-**원인:** AAR은 `react-android` / `hermes-android` 의존성을 내부에 포함하지 않는다. 소비앱 Gradle이 React Native Maven 저장소를 알지 못하면 의존성을 해석하지 못한다.
+**원인:** hongfield `1.0.2` 이하 버전은 POM에 `react-android` / `hermes-android` 버전이 비어있어(`:.`) Gradle이 어느 버전을 받아야 할지 알 수 없다.
 
-**해결:** `settings.gradle`에 React Native 저장소를 추가하고, `build.gradle`에 의존성을 명시한다 (위 섹션 2 — 방법 B 참고).
+**해결:** hongfield `1.0.3` 이상으로 업그레이드한다. 1.0.3부터 POM에 버전이 명시되어 Maven Central에서 자동으로 해소된다.
+
+업그레이드가 불가능한 경우, 소비앱 `build.gradle`에 직접 버전을 선언한다:
+
+```kotlin
+dependencies {
+    implementation("com.hong.lib:hongfield:1.0.2")
+    implementation("com.facebook.react:react-android:0.84.1")
+    implementation("com.facebook.hermes:hermes-android:250829098.0.9")
+}
+```
+
+`settings.gradle.kts`에 `mavenCentral()`이 없다면 추가한다 (섹션 2 — 방법 B 참고).
 
 ### NoClassDefFoundError: OpenSourceMergedSoMapping
 
@@ -288,7 +288,7 @@ java.lang.NoClassDefFoundError: Failed resolution of: Lcom/facebook/react/soload
 configurations.all {
     resolutionStrategy {
         force 'com.facebook.react:react-android:0.84.1'
-        force 'com.facebook.react:hermes-android:0.84.1'
+        force 'com.facebook.hermes:hermes-android:250829098.0.9'
     }
 }
 ```
@@ -298,9 +298,9 @@ configurations.all {
 configurations.all {
     resolutionStrategy {
         force("com.facebook.react:react-android:0.84.1")
-        force("com.facebook.react:hermes-android:0.84.1")
+        force("com.facebook.hermes:hermes-android:250829098.0.9")
     }
 }
 ```
 
-> 버전 `0.84.1`은 hongfield 라이브러리가 빌드된 RN 버전이다. 버전 불일치 시 다른 런타임 오류가 발생할 수 있으므로 정확히 맞춰야 한다.
+> `react-android`는 `com.facebook.react` 그룹, `hermes-android`는 `com.facebook.hermes` 그룹이다. 버전 불일치 시 다른 런타임 오류가 발생할 수 있으므로 정확히 맞춰야 한다.
