@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'com.facebook.react'
     id 'maven-publish'
 }
 
@@ -11,6 +12,15 @@ android {
     defaultConfig {
         minSdk rootProject.ext.minSdkVersion
         targetSdk rootProject.ext.targetSdkVersion
+
+        buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED",
+            (properties["newArchEnabled"] ?: "false").toString())
+        buildConfigField("boolean", "IS_HERMES_ENABLED",
+            (properties["hermesEnabled"] ?: "true").toString())
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -27,6 +37,16 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+
+    publishing {
+        multipleVariants {
+            allVariants()
+        }
+    }
+}
+
+react {
+    autolinkLibrariesWithApp()
 }
 
 dependencies {
@@ -35,21 +55,50 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                groupId 'com.bridgelib'
-                artifactId 'bridge-lib'
-                version '1.0.0'
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            groupId 'com.nol.lib.reactnative'
+            artifactId 'bridgeLib'
+            version '1.0.0'
+            afterEvaluate {
+                from components.getByName("default")
             }
-        }
-        repositories {
-            maven {
-                name = 'Local'
-                url = uri(findProperty('mavenRepoPath') ?: "${System.properties['user.home']}/.m2/repository")
+            pom {
+                withXml {
+                    def dependenciesNode = asNode().get('dependencies')?.getAt(0)
+                    if (dependenciesNode) {
+                        dependenciesNode.children()
+                            .findAll { it.groupId.text() == rootProject.name }
+                            .each { dependenciesNode.remove(it) }
+                    }
+                }
             }
         }
     }
+    repositories {
+        maven {
+            name = 'Local'
+            url = uri(findProperty('mavenRepoPath') ?: "${System.properties['user.home']}/.m2/repository")
+        }
+        mavenLocal()
+    }
+}
+
+tasks.register("removeDependenciesFromModuleFile") {
+    doLast {
+        def moduleFile = file("${layout.buildDirectory.get()}/publications/mavenAar/module.json")
+        if (moduleFile.exists()) {
+            def json = new groovy.json.JsonSlurper().parse(moduleFile)
+            json.variants?.each { variant ->
+                variant.dependencies?.removeAll { it.group == rootProject.name }
+            }
+            moduleFile.text = groovy.json.JsonOutput.prettyPrint(
+                groovy.json.JsonOutput.toJson(json))
+        }
+    }
+}
+
+tasks.named("generateMetadataFileForMavenAarPublication") {
+    finalizedBy("removeDependenciesFromModuleFile")
 }
