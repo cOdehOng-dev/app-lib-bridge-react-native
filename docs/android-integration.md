@@ -4,8 +4,18 @@
 
 소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 → Maven 배포 순서로 자동 실행됩니다.
 
+**sh 스크립트 (권장)**
 ```bash
 ./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
+```
+
+**CLI**
+```bash
+# AAR 빌드
+npx hongfield package:android --variant Release --module-name reactnativeapp
+
+# 로컬 Maven 배포
+npx hongfield publish:android --module-name reactnativeapp
 ```
 
 Maven 배포 없이 AAR만 빌드하려면:
