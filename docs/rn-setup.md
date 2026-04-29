@@ -85,19 +85,19 @@ function PaymentButton() {
 **sh 스크립트 (권장)**
 ```bash
 # AAR 빌드 + 로컬 Maven 배포
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
 
 # AAR만 빌드 (Maven 배포 제외)
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp --skip-maven
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib --skip-maven
 ```
 
 **CLI**
 ```bash
 # AAR 빌드
-npx hongfield package:android --variant Release --module-name reactnativeapp
+npx hongfield package:android --variant Release --module-name bridgelib
 
 # 로컬 Maven 배포
-npx hongfield publish:android --module-name reactnativeapp
+npx hongfield publish:android --module-name bridgelib
 ```
 
 ### iOS
