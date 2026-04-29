@@ -42,6 +42,7 @@ import React_RCTFabric
     private func embedReactNativeView() {
         guard let bridge = BridgeLibManager.shared.getFactory().bridge,
               let surfacePresenter = bridge.surfacePresenter else {
+            assertionFailure("[BridgeLibViewController] surfacePresenter를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
             NSLog("[BridgeLibViewController] surfacePresenter를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
             return
         }
