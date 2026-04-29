@@ -4,8 +4,6 @@ name: Publish hongfield(릴리즈 배포)
 # 트리거 2: v* 태그 push (예: v1.0.0) → 태그 버전으로 정식 배포
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 
