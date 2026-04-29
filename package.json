@@ -1,5 +1,5 @@
 {
-  "name": "@cOdehOng-dev/hongfield",
+  "name": "@codehong-dev/hongfield",
   "version": "1.0.0",
   "description": "Native-React Native bridge library for Android and iOS",
   "private": false,

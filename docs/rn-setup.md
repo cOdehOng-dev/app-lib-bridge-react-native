@@ -4,10 +4,10 @@
 
 ```bash
 # npm
-npm install nol-react-native-bridge
+npm install hongfield
 
 # yarn
-yarn add nol-react-native-bridge
+yarn add hongfield
 
 # 또는 로컬 경로로 참조 (npm)
 npm install /path/to/app-lib-bridge-react-native
@@ -36,7 +36,7 @@ AppRegistry.registerComponent('PaymentScreen', () => PaymentScreen);
 ## 3. 이벤트 구독 (네이티브 → RN)
 
 ```typescript
-import { useBridgeEvent } from 'nol-react-native-bridge';
+import { useBridgeEvent } from '@codehong-dev/hongfield';
 
 function HomeScreen() {
   useBridgeEvent('USER_LOGGED_IN', (data) => {
@@ -50,7 +50,7 @@ function HomeScreen() {
 ## 4. 이벤트 전송 (RN → 네이티브)
 
 ```typescript
-import { sendToNative } from 'nol-react-native-bridge';
+import { sendToNative } from '@codehong-dev/hongfield';
 
 function PaymentButton() {
   const handlePress = () => {
@@ -138,8 +138,8 @@ Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 
 
 ```bash
 # npm
-npx nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
+npx hongfield package:ios --scheme BridgeLib --configuration Release
 
 # yarn
-yarn nol-react-native-bridge package:ios --scheme BridgeLib --configuration Release
+yarn hongfield package:ios --scheme BridgeLib --configuration Release
 ```
