@@ -1,10 +1,15 @@
 import UIKit
 import React
+import React_RCTFabric
 
 @objc public class BridgeLibViewController: UIViewController {
 
     private let moduleName: String
     private let initialProps: [String: Any]?
+
+    /// RN 화면이 popToNative()를 호출할 때 실행될 클로저.
+    /// nil이면 아무 동작도 하지 않는다.
+    @objc public var onPopRequested: (() -> Void)?
 
     /// - Parameters:
     ///   - moduleName: AppRegistry.registerComponent()에 등록된 컴포넌트 이름
@@ -24,22 +29,34 @@ import React
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         embedReactNativeView()
+        BridgeEventEmitter.shared.setPopToNativeCallback { [weak self] in
+            self?.onPopRequested?()
+        }
+    }
+
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        BridgeEventEmitter.shared.setPopToNativeCallback(nil)
     }
 
     private func embedReactNativeView() {
-        guard let bridge = BridgeLibManager.shared.getFactory().bridge else {
-            assertionFailure("[BridgeLibViewController] RCTBridge를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
-            NSLog("[BridgeLibViewController] RCTBridge를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
+        guard let bridge = BridgeLibManager.shared.getFactory().bridge,
+              let surfacePresenter = bridge.surfacePresenter else {
+            NSLog("[BridgeLibViewController] surfacePresenter를 가져올 수 없습니다. BridgeLibManager.initialize()가 먼저 호출되었는지 확인하세요.")
             return
         }
 
-        let rootView = RCTRootView(
-            bridge: bridge,
+        let surface = RCTFabricSurface(
+            surfacePresenter: surfacePresenter,
             moduleName: moduleName,
-            initialProperties: initialProps
+            initialProperties: initialProps ?? [:]
         )
-        rootView.frame = view.bounds
-        rootView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(rootView)
+        let hostingView = RCTSurfaceHostingView(
+            surface: surface,
+            sizeMeasureMode: [.widthExact, .heightExact]
+        )
+        hostingView.frame = view.bounds
+        hostingView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(hostingView)
     }
 }
