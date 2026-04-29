@@ -7,12 +7,12 @@ import React
     @objc public let localBundleURL: URL?
 
     /// - Parameters:
-    ///   - devURL: Metro 개발 서버 URL (DEBUG 빌드에서 사용)
-    ///   - assetName: 앱 번들 내 .jsbundle 파일명 (확장자 제외, 예: "main")
+    ///   - devURL: Metro 개발 서버 URL (DEBUG 빌드에서 사용). 기본값: 시뮬레이터 표준 주소
+    ///   - assetName: 앱 번들 내 .jsbundle 파일명 (확장자 제외). 기본값: "main"
     ///   - localBundleURL: OTA로 다운로드된 번들의 로컬 파일 URL. nil이면 assetName 사용
-    @objc public init(
-        devURL: URL,
-        assetName: String,
+    public init(
+        devURL: URL = URL(string: "http://localhost:8081/index.bundle")!,
+        assetName: String = "main",
         localBundleURL: URL? = nil
     ) {
         self.devURL = devURL

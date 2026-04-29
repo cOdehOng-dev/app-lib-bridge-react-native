@@ -11,7 +11,7 @@ import React_RCTAppDelegate
     private override init() {}
 
     /// AppDelegate.application(_:didFinishLaunchingWithOptions:)에서 1회 호출
-    @objc public func initialize(bundleConfig: BundleConfig) {
+    public func initialize(bundleConfig: BundleConfig = BundleConfig()) {
         guard factory == nil else {
             NSLog("[BridgeLibManager] 이미 초기화되었습니다. 두 번째 initialize() 호출은 무시됩니다.")
             return

@@ -1,6 +1,7 @@
 package com.bridgelib
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactHost
@@ -14,11 +15,14 @@ object BridgeLibHost {
 
     fun init(
         application: Application,
-        bundleConfig: BundleConfig,
+        bundleConfig: BundleConfig = BundleConfig(),
         packages: List<ReactPackage> = emptyList(),
         jsMainModulePath: String = "index"
     ) {
         if (reactHost != null) return
+
+        val isDebug = bundleConfig.isDebug
+            ?: (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
         SoLoader.init(application, OpenSourceMergedSoMapping)
 
@@ -26,7 +30,7 @@ object BridgeLibHost {
             context = application,
             packageList = packages + listOf(BridgeLibPackage()),
             jsMainModulePath = jsMainModulePath,
-            jsBundleAssetPath = bundleConfig.assetPath,
+            jsBundleAssetPath = if (isDebug) null else bundleConfig.assetPath,
             jsBundleFilePath = bundleConfig.localBundlePath
         )
     }

@@ -56,7 +56,7 @@ publishing {
         mavenAar(MavenPublication) {
             groupId 'com.hong.lib'
             artifactId 'hongfield'
-            version '1.0.0'
+            version findProperty('libVersion') ?: '1.0.0'
             afterEvaluate {
                 from components.getByName("default")
             }

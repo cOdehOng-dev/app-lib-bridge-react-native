@@ -32,7 +32,13 @@ end
   return podspecPath;
 }
 
-function publishIos({ moduleName = 'bridge-lib', repo, groupId = 'com.hong.lib', artifactId = 'hongfield', version = '1.0.0' } = {}) {
+function publishIos({ moduleName = 'bridge-lib', repo, groupId = 'com.hong.lib', artifactId = 'hongfield', version } = {}) {
+  if (!version) {
+    console.error('[bridge-lib] 오류: --version 옵션이 필요합니다.');
+    console.error('[bridge-lib] 예시: npx hongfield publish:ios --version 1.0.0');
+    process.exit(1);
+  }
+
   const rootDir = findRootDir();
   const repoPath = repo || path.join(os.homedir(), '.cocoapods', 'local');
   const xcframeworkPath = path.join(rootDir, 'output', 'ios', `BridgeLib.xcframework`);

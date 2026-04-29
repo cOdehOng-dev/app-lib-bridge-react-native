@@ -1,14 +1,12 @@
 package com.bridgelib
 
 /**
- * @param devUrl 개발 서버 URL (Metro). isDebug=true 시 사용
- * @param assetPath assets에 포함된 번들 파일명 (예: index.android.bundle)
+ * @param assetPath assets에 포함된 번들 파일명. 기본값: "index.android.bundle"
  * @param localBundlePath OTA로 다운로드된 번들의 로컬 파일 경로. null이면 assetPath 사용
- * @param isDebug 호스트 앱의 BuildConfig.DEBUG 값을 전달
+ * @param isDebug 디버그 여부. 기본값: ApplicationInfo 플래그에서 자동 감지
  */
 data class BundleConfig(
-    val devUrl: String,
-    val assetPath: String,
+    val assetPath: String = "index.android.bundle",
     val localBundlePath: String? = null,
-    val isDebug: Boolean = false
+    val isDebug: Boolean? = null
 )

@@ -25,9 +25,10 @@ program
   .command('publish:android')
   .description('Android AAR을 로컬 Maven에 배포')
   .option('--module-name <name>', '모듈 이름', 'bridge-lib')
+  .option('--version <version>', '배포 버전 (기본: build.gradle 값)')
   .option('--repo <path>', 'Maven 저장소 경로 (기본: ~/.m2/repository)')
   .action((options) => {
-    publishAndroid({ moduleName: options.moduleName, repo: options.repo });
+    publishAndroid({ moduleName: options.moduleName, version: options.version, repo: options.repo });
   });
 
 program
@@ -50,7 +51,7 @@ program
   .option('--module-name <name>', '모듈 이름', 'bridge-lib')
   .option('--group-id <id>', 'groupId', 'com.hong.lib')
   .option('--artifact-id <id>', 'artifactId (pod name)', 'hongfield')
-  .option('--version <version>', '버전', '1.0.0')
+  .option('--version <version>', '배포 버전')
   .option('--repo <path>', '로컬 스펙 레포 경로 (기본: ~/.cocoapods/local)')
   .action((options) => {
     publishIos({

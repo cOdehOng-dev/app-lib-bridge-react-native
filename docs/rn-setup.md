@@ -98,8 +98,8 @@ function PaymentButton() {
 # AAR 빌드
 npx hongfield package:android --variant Release --module-name bridgelib
 
-# 로컬 Maven 배포
-npx hongfield publish:android --module-name bridgelib
+# 로컬 Maven 배포 (--version 필수)
+npx hongfield publish:android --module-name bridgelib --version 1.0.0
 ```
 
 ### iOS
@@ -113,7 +113,11 @@ npx hongfield publish:android --module-name bridgelib
 **CLI**
 
 ```bash
+# XCFramework 빌드
 npx hongfield package:ios --scheme BridgeLib --configuration Release
+
+# 로컬 CocoaPods 배포 (--version 필수)
+npx hongfield publish:ios --version 1.0.0
 ```
 
 ## 6. Codegen 설정 확인
