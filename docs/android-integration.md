@@ -40,29 +40,61 @@ dependencies {
 
 ### 방법 B: 로컬 Maven 사용
 
-**Groovy (build.gradle / settings.gradle)**
+AAR은 `react-android` / `hermes-android` 의존성을 번들에 포함하지 않으므로, 소비앱이 React Native Maven 저장소를 직접 선언해야 한다.
+
+**settings.gradle (Groovy)**
 
 ```groovy
-repositories {
-    maven { url "${System.properties['user.home']}/.m2/repository" }
-}
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "${System.properties['user.home']}/.m2/repository" }
 
-dependencies {
-    implementation 'com.hong.lib:hongfield:1.0.0' // publish:android --version 에 지정한 버전
+        // React Native 의존성 저장소 (필수)
+        maven { url "$rootDir/../node_modules/react-native/android" }
+        maven { url "$rootDir/../node_modules/jsc-android/dist" }
+    }
 }
 ```
 
-**Kotlin DSL (settings.gradle.kts / build.gradle.kts)**
+**settings.gradle.kts (Kotlin DSL)**
 
 ```kotlin
-repositories {
-    maven { url = uri("${System.getProperty("user.home")}/.m2/repository") }
-}
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("${System.getProperty("user.home")}/.m2/repository") }
 
-dependencies {
-    implementation("com.hong.lib:hongfield:1.0.0") // publish:android --version 에 지정한 버전
+        // React Native 의존성 저장소 (필수)
+        maven { url = uri("$rootDir/../node_modules/react-native/android") }
+        maven { url = uri("$rootDir/../node_modules/jsc-android/dist") }
+    }
 }
 ```
+
+**build.gradle (Groovy)**
+
+```groovy
+dependencies {
+    implementation 'com.hong.lib:hongfield:1.0.0' // publish:android --version 에 지정한 버전
+    implementation 'com.facebook.react:react-android:0.84.1'
+    implementation 'com.facebook.react:hermes-android:0.84.1'
+}
+```
+
+**build.gradle.kts (Kotlin DSL)**
+
+```kotlin
+dependencies {
+    implementation("com.hong.lib:hongfield:1.0.0") // publish:android --version 에 지정한 버전
+    implementation("com.facebook.react:react-android:0.84.1")
+    implementation("com.facebook.react:hermes-android:0.84.1")
+}
+```
+
+> **경로 조정:** `node_modules`가 소비앱 루트 기준 `../` 위치에 없다면 실제 경로로 수정한다. `react-android` / `hermes-android` 버전은 hongfield 라이브러리가 빌드된 RN 버전과 일치해야 한다.
 
 ## 3. AndroidManifest.xml 설정
 
@@ -223,3 +255,19 @@ BridgeLibHost.init(
     bundleConfig = BundleConfig(localBundlePath = localPath)
 )
 ```
+
+## 8. 트러블슈팅
+
+### Could not find com.facebook.react:react-android / hermes-android
+
+```
+Could not resolve all files for configuration ':mobile:prdDebugRuntimeClasspath'.
+  > Could not find com.facebook.react:react-android:.
+    Required by: project :mobile > com.hong.lib:hongfield:x.x.x
+  > Could not find com.facebook.react:hermes-android:.
+    Required by: project :mobile > com.hong.lib:hongfield:x.x.x
+```
+
+**원인:** AAR은 `react-android` / `hermes-android` 의존성을 내부에 포함하지 않는다. 소비앱 Gradle이 React Native Maven 저장소를 알지 못하면 의존성을 해석하지 못한다.
+
+**해결:** `settings.gradle`에 React Native 저장소를 추가하고, `build.gradle`에 의존성을 명시한다 (위 섹션 2 — 방법 B 참고).

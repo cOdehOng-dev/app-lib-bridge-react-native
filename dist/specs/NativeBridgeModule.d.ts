@@ -1,8 +1,9 @@
 import type { TurboModule } from 'react-native';
 export interface Spec extends TurboModule {
-    sendEvent(name: string, data: Object): void;
-    addListener(eventName: string): void;
-    removeListeners(count: number): void;
+  sendEvent(name: string, data: Object): void;
+  addListener(eventName: string): void;
+  removeListeners(count: number): void;
+  popToNative(): void;
 }
 declare const _default: Spec;
 export default _default;
