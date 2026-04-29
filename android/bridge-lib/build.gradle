@@ -80,7 +80,10 @@ publishing {
         }
     }
     repositories {
-        mavenLocal()
+        maven {
+            name = 'Local'
+            url = uri(findProperty('mavenRepoPath') ?: "${System.properties['user.home']}/.m2/repository")
+        }
     }
 }
 

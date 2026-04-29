@@ -24,7 +24,7 @@ function publishAndroid({ moduleName = 'bridge-lib', repo } = {}) {
 
   try {
     execSync(
-      `${gradlew} :bridge-lib:publishReleasePublicationToLocalRepository -PmavenRepoPath=${repoPath}`,
+      `${gradlew} :bridge-lib:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath}`,
       { cwd: androidDir, stdio: 'inherit' }
     );
   } catch (err) {
@@ -32,7 +32,7 @@ function publishAndroid({ moduleName = 'bridge-lib', repo } = {}) {
     process.exit(1);
   }
 
-  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/bridgelib/bridge-lib/\n`);
+  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/nol/lib/reactnative/bridgeLib/\n`);
 }
 
 module.exports = publishAndroid;
