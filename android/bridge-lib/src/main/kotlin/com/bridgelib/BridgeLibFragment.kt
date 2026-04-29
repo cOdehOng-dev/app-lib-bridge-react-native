@@ -45,7 +45,8 @@ class BridgeLibFragment : Fragment() {
 
         backCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // backEnabled=false 일 때 활성화되어 뒤로가기를 삼킴 (RN 내부 스택 처리)
+                // backEnabled=false: 뒤로가기를 RN JS BackHandler에 위임. JS 스택 소진 시 아무 동작 없음.
+                reactDelegate?.onBackPressed()
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback!!)
