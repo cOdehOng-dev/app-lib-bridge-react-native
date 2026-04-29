@@ -2,9 +2,6 @@
 #
 .DS_Store
 
-# Build output
-dist/
-
 # Xcode
 #
 build/
