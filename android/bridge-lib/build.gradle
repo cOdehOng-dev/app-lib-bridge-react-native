@@ -69,6 +69,9 @@ publishing {
                     def dependenciesNode = asNode().get('dependencies')?.getAt(0)
                     if (dependenciesNode) {
                         dependenciesNode.children()
+                            // Autolinked native modules are added as project dependencies (implementation project(':xxx'))
+                            // and get rootProject.name as their Maven groupId when published. Remove them from the POM
+                            // so consumers don't try to resolve internal project references as external artifacts.
                             .findAll { it.groupId.text() == rootProject.name }
                             .each { dependenciesNode.remove(it) }
                     }
@@ -77,10 +80,6 @@ publishing {
         }
     }
     repositories {
-        maven {
-            name = 'Local'
-            url = uri(findProperty('mavenRepoPath') ?: "${System.properties['user.home']}/.m2/repository")
-        }
         mavenLocal()
     }
 }
@@ -91,6 +90,7 @@ tasks.register("removeDependenciesFromModuleFile") {
         if (moduleFile.exists()) {
             def json = new groovy.json.JsonSlurper().parse(moduleFile)
             json.variants?.each { variant ->
+                // Same logic as POM cleanup: remove autolinked native module project references.
                 variant.dependencies?.removeAll { it.group == rootProject.name }
             }
             moduleFile.text = groovy.json.JsonOutput.prettyPrint(
