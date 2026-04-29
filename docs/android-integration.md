@@ -4,25 +4,15 @@
 
 소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 → Maven 배포 순서로 자동 실행됩니다.
 
-**sh 스크립트 (권장)**
 ```bash
+# AAR 빌드 + 로컬 Maven 배포
 ./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
-```
 
-**CLI**
-```bash
-# AAR 빌드
-npx hongfield package:android --variant Release --module-name reactnativeapp
-
-# 로컬 Maven 배포
-npx hongfield publish:android --module-name reactnativeapp
-```
-
-Maven 배포 없이 AAR만 빌드하려면:
-
-```bash
+# AAR만 빌드 (Maven 배포 제외)
 ./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp --skip-maven
 ```
+
+> CLI 명령어는 [rn-setup.md — 섹션 5](./rn-setup.md#5-번들-빌드-및-네이티브-패키징)를 참고하세요.
 
 결과물: `output/android/reactnativeapp-release.aar`
 
@@ -33,6 +23,7 @@ Maven 배포 없이 AAR만 빌드하려면:
 `app/libs/` 폴더에 AAR 복사 후 의존성 추가:
 
 **Groovy (build.gradle)**
+
 ```groovy
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
@@ -43,6 +34,7 @@ dependencies {
 ```
 
 **Kotlin DSL (build.gradle.kts)**
+
 ```kotlin
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
@@ -55,6 +47,7 @@ dependencies {
 ### 방법 B: 로컬 Maven 사용
 
 **Groovy (build.gradle / settings.gradle)**
+
 ```groovy
 // settings.gradle 또는 프로젝트 수준 build.gradle의 repositories 블록
 repositories {
@@ -68,6 +61,7 @@ dependencies {
 ```
 
 **Kotlin DSL (settings.gradle.kts / build.gradle.kts)**
+
 ```kotlin
 // settings.gradle.kts 또는 프로젝트 수준 build.gradle.kts의 repositories 블록
 repositories {
@@ -113,10 +107,12 @@ class MyApplication : Application() {
 
 Metro 개발 서버에 접속하는 URL로, 실행 환경에 따라 다르다.
 
-| 환경 | devUrl |
-|---|---|
-| Android 에뮬레이터 | `http://10.0.2.2:8081/index.bundle` |
+
+| 환경              | devUrl                                |
+| --------------- | ------------------------------------- |
+| Android 에뮬레이터   | `http://10.0.2.2:8081/index.bundle`   |
 | 실기기 (USB/Wi-Fi) | `http://<개발 PC IP>:8081/index.bundle` |
+
 
 - **에뮬레이터**: Android 에뮬레이터에서 `10.0.2.2`는 호스트 PC의 `localhost`를 가리키는 특수 주소다.
 - **실기기**: 개발 PC와 기기가 같은 Wi-Fi에 연결된 상태에서 PC의 로컬 IP를 사용한다. PC IP는 macOS 기준 `ifconfig | grep "inet "` 또는 시스템 환경설정 > 네트워크에서 확인할 수 있다.
@@ -233,3 +229,4 @@ BridgeLibHost.init(
     )
 )
 ```
+

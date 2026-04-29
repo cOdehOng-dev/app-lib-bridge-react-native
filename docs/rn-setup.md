@@ -76,16 +76,40 @@ function PaymentButton() {
 }
 ```
 
-## 5. 번들 빌드
+## 5. 번들 빌드 및 네이티브 패키징
 
 번들 빌드는 AAR / XCFramework 빌드 시 자동으로 실행됩니다. 별도 실행 불필요합니다.
 
-```bash
-# Android - 번들 포함 AAR 빌드
-./node_modules/@codehong-dev/hongfield/package-android.sh
+### Android
 
-# iOS - 번들 포함 XCFramework 빌드
-./node_modules/@codehong-dev/hongfield/package-ios.sh
+**sh 스크립트 (권장)**
+```bash
+# AAR 빌드 + 로컬 Maven 배포
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
+
+# AAR만 빌드 (Maven 배포 제외)
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp --skip-maven
+```
+
+**CLI**
+```bash
+# AAR 빌드
+npx hongfield package:android --variant Release --module-name reactnativeapp
+
+# 로컬 Maven 배포
+npx hongfield publish:android --module-name reactnativeapp
+```
+
+### iOS
+
+**sh 스크립트 (권장)**
+```bash
+./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
+```
+
+**CLI**
+```bash
+npx hongfield package:ios --scheme BridgeLib --configuration Release
 ```
 
 ## 6. Codegen 설정 확인
@@ -146,11 +170,7 @@ Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 
 이후 아래 명령어로 XCFramework를 빌드한다:
 
 ```bash
-# npm
-npx @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Release
-
-# yarn
-yarn @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Release
+./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
 ```
 
 ## 8. 버전 관리 및 배포

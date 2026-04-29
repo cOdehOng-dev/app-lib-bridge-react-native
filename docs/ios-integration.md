@@ -4,15 +4,11 @@
 
 소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
 
-**sh 스크립트 (권장)**
 ```bash
 ./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
 ```
 
-**CLI**
-```bash
-npx hongfield package:ios --scheme BridgeLib --configuration Release
-```
+> CLI 명령어는 [rn-setup.md — 섹션 5](./rn-setup.md#5-번들-빌드-및-네이티브-패키징)를 참고하세요.
 
 결과물: `output/ios/BridgeLib.xcframework`
 
