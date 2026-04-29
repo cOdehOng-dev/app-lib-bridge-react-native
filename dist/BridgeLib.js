@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BridgeLib = void 0;
+const package_json_1 = require("../package.json");
 function resolveBundleMode() {
     if (__DEV__)
         return 'dev';
@@ -8,6 +9,6 @@ function resolveBundleMode() {
 }
 exports.BridgeLib = {
     bundleMode: resolveBundleMode(),
-    version: '1.0.0',
+    version: package_json_1.version,
 };
 //# sourceMappingURL=BridgeLib.js.map

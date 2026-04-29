@@ -1,1 +1,1 @@
-{"version":3,"file":"BridgeLib.d.ts","sourceRoot":"","sources":["../src/BridgeLib.ts"],"names":[],"mappings":"AAAA,KAAK,UAAU,GAAG,KAAK,GAAG,QAAQ,GAAG,QAAQ,CAAC;AAO9C,eAAO,MAAM,SAAS;yBACe,UAAU;;CAErC,CAAC"}
+{"version":3,"file":"BridgeLib.d.ts","sourceRoot":"","sources":["../src/BridgeLib.ts"],"names":[],"mappings":"AAEA,KAAK,UAAU,GAAG,KAAK,GAAG,QAAQ,GAAG,QAAQ,CAAC;AAO9C,eAAO,MAAM,SAAS;yBACe,UAAU;;CAErC,CAAC"}
