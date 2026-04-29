@@ -13,6 +13,25 @@ function findRootDir() {
   throw new Error('package.json을 찾을 수 없습니다.');
 }
 
+function buildJsBundle(rootDir) {
+  const bundleOutput = path.join(rootDir, 'ios', 'main.jsbundle');
+  const assetsDir = path.join(rootDir, 'ios');
+
+  console.log('[bridge-lib] JS 번들 빌드 중...');
+  execSync(
+    [
+      'npx react-native bundle',
+      '--platform ios',
+      '--dev false',
+      '--entry-file index.js',
+      `--bundle-output ${bundleOutput}`,
+      `--assets-dest ${assetsDir}`,
+    ].join(' '),
+    { cwd: rootDir, stdio: 'inherit' }
+  );
+  console.log('[bridge-lib] ✓ JS 번들 완료');
+}
+
 function packageIos({ scheme = 'BridgeLib', configuration = 'Release', output } = {}) {
   const rootDir = findRootDir();
   const outputDir = output || path.join(rootDir, 'output', 'ios');
@@ -31,6 +50,8 @@ function packageIos({ scheme = 'BridgeLib', configuration = 'Release', output } 
     console.error('[bridge-lib] ios/ 폴더에서 pod install을 실행했는지 확인하세요.');
     process.exit(1);
   }
+
+  buildJsBundle(rootDir);
 
   console.log(`\n[bridge-lib] iOS XCFramework 빌드 시작: ${scheme} (${configuration})`);
 

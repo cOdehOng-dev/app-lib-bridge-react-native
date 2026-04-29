@@ -13,12 +13,34 @@ function findRootDir() {
   throw new Error('package.json을 찾을 수 없습니다.');
 }
 
+function buildJsBundle(rootDir) {
+  const assetsDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'assets');
+  const resDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
+  fs.mkdirSync(assetsDir, { recursive: true });
+
+  console.log('[bridge-lib] JS 번들 빌드 중...');
+  execSync(
+    [
+      'npx react-native bundle',
+      '--platform android',
+      '--dev false',
+      '--entry-file index.js',
+      `--bundle-output ${path.join(assetsDir, 'index.android.bundle')}`,
+      `--assets-dest ${resDir}`,
+    ].join(' '),
+    { cwd: rootDir, stdio: 'inherit' }
+  );
+  console.log('[bridge-lib] ✓ JS 번들 완료');
+}
+
 function packageAndroid({ variant = 'Release', moduleName = 'bridge-lib' } = {}) {
   const rootDir = findRootDir();
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
   const androidDir = path.join(rootDir, 'android');
 
   console.log(`\n[bridge-lib] Android AAR 빌드 시작: ${moduleName} (${variant})`);
+
+  buildJsBundle(rootDir);
 
   try {
     execSync(`${gradlew} :bridge-lib:assemble${variant}`, {
