@@ -285,7 +285,7 @@ npx bridge-lib package:ios --scheme BridgeLib --configuration Release --output .
 
 **publish:android**
 1. `./gradlew :bridge-lib:publishToMavenLocal` 실행
-2. `~/.m2/repository/com/bridgelib/bridge-lib/` 에 설치됨
+2. `~/.m2/repository/com/nol/lib/reactnative/bridgeLib/` 에 설치됨
 
 **package:ios**
 1. `xcodebuild archive` — 시뮬레이터 빌드
