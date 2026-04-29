@@ -1,6 +1,6 @@
 {
   "name": "@codehong-dev/hongfield",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Native-React Native bridge library for Android and iOS",
   "private": false,
   "publishConfig": {

@@ -5,11 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.facebook.react.ReactRootView
+import com.facebook.react.ReactDelegate
+import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
 class BridgeLibFragment : Fragment() {
 
-    private var reactRootView: ReactRootView? = null
+    private var reactDelegate: ReactDelegate? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -22,19 +23,34 @@ class BridgeLibFragment : Fragment() {
             )
         val initialProps = arguments?.getBundle(ARG_INITIAL_PROPS)
 
-        return ReactRootView(requireContext()).also { view ->
-            reactRootView = view
-            view.startReactApplication(
-                BridgeLibHost.getReactHost(),
-                moduleName,
-                initialProps
-            )
+        val delegate = ReactDelegate(
+            requireActivity(),
+            BridgeLibHost.getReactHost(),
+            moduleName,
+            initialProps
+        )
+        reactDelegate = delegate
+        delegate.loadApp()
+        return checkNotNull(delegate.reactRootView) {
+            "ReactDelegate.reactRootView이 null입니다."
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (activity is DefaultHardwareBackBtnHandler) {
+            reactDelegate?.onHostResume()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        reactDelegate?.onHostPause()
+    }
+
     override fun onDestroyView() {
-        reactRootView?.unmountReactApplication()
-        reactRootView = null
+        reactDelegate?.unloadApp()
+        reactDelegate = null
         super.onDestroyView()
     }
 

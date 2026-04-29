@@ -4,11 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.facebook.react.ReactRootView
+import com.facebook.react.ReactDelegate
+import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
-class BridgeLibActivity : AppCompatActivity() {
+class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
 
-    private var reactRootView: ReactRootView? = null
+    private var reactDelegate: ReactDelegate? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,19 +20,35 @@ class BridgeLibActivity : AppCompatActivity() {
             )
         val initialProps = intent.getBundleExtra(EXTRA_INITIAL_PROPS)
 
-        reactRootView = ReactRootView(this).also { view ->
-            view.startReactApplication(
-                BridgeLibHost.getReactHost(),
-                moduleName,
-                initialProps
-            )
-            setContentView(view)
+        reactDelegate = ReactDelegate(
+            this,
+            BridgeLibHost.getReactHost(),
+            moduleName,
+            initialProps
+        ).also { delegate ->
+            delegate.loadApp()
+            setContentView(delegate.reactRootView)
         }
     }
 
+    override fun invokeDefaultOnBackPressed() {
+        @Suppress("DEPRECATION")
+        super.onBackPressed()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        reactDelegate?.onHostResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        reactDelegate?.onHostPause()
+    }
+
     override fun onDestroy() {
-        reactRootView?.unmountReactApplication()
-        reactRootView = null
+        reactDelegate?.onHostDestroy()
+        reactDelegate = null
         super.onDestroy()
     }
 

@@ -131,8 +131,8 @@ BridgeEventBus.off("PAYMENT_DONE")
 `android/bridge-lib` 모듈에 `maven-publish` 플러그인을 적용하여 로컬 Maven에 배포한다.
 
 ```
-groupId: com.nol.lib.reactnative
-artifactId: bridgeLib
+groupId: com.hong.lib
+artifactId: hongfield
 version: 1.0.0
 ```
 
@@ -285,7 +285,7 @@ npx bridge-lib package:ios --scheme BridgeLib --configuration Release --output .
 
 **publish:android**
 1. `./gradlew :bridge-lib:publishMavenAarPublicationToLocalRepository` 실행
-2. `~/.m2/repository/com/nol/lib/reactnative/bridgeLib/` 에 설치됨
+2. `~/.m2/repository/com/hong/lib/hongfield/` 에 설치됨
 
 **package:ios**
 1. `xcodebuild archive` — 시뮬레이터 빌드

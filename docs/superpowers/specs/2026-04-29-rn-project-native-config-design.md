@@ -23,8 +23,8 @@ brownfield 라이브러리를 의존성으로 추가하지 않고, 동등한 기
 
 | 항목 | 기존 | 변경 |
 |---|---|---|
-| groupId | `com.bridgelib` | `com.nol.lib.reactnative` |
-| artifactId | `bridge-lib` | `bridgeLib` |
+| groupId | `com.bridgelib` | `com.hong.lib` |
+| artifactId | `bridge-lib` | `hongfield` |
 | version | `1.0.0` | `1.0.0` |
 
 영향 파일:

@@ -22,10 +22,12 @@ object BridgeLibHost {
 
         SoLoader.init(application, OpenSourceMergedSoMapping)
 
-        val delegate = BridgeLibHostDelegate(bundleConfig, packages, jsMainModulePath)
         reactHost = DefaultReactHost.getDefaultReactHost(
             context = application,
-            reactHostDelegate = delegate
+            packageList = packages + listOf(BridgeLibPackage()),
+            jsMainModulePath = jsMainModulePath,
+            jsBundleAssetPath = bundleConfig.assetPath,
+            jsBundleFilePath = bundleConfig.localBundlePath
         )
     }
 

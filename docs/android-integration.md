@@ -56,7 +56,7 @@ repositories {
 
 // app/build.gradle
 dependencies {
-    implementation 'com.nol.lib.reactnative:bridgeLib:1.0.5'
+    implementation 'com.hong.lib:hongfield:1.0.0'
 }
 ```
 
@@ -70,7 +70,7 @@ repositories {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nol.lib.reactnative:bridgeLib:1.0.5")
+    implementation("com.hong.lib:hongfield:1.0.0")
 }
 ```
 

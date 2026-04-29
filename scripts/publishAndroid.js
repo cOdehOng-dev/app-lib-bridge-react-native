@@ -32,7 +32,7 @@ function publishAndroid({ moduleName = 'bridge-lib', repo } = {}) {
     process.exit(1);
   }
 
-  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/nol/lib/reactnative/bridgeLib/\n`);
+  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/hong/lib/hongfield/\n`);
 }
 
 module.exports = publishAndroid;

@@ -99,8 +99,8 @@ dependencies {
 publishing {
     publications {
         mavenAar(MavenPublication) {
-            groupId 'com.nol.lib.reactnative'
-            artifactId 'bridgeLib'
+            groupId 'com.hong.lib'
+            artifactId 'hongfield'
             version '1.0.0'
             afterEvaluate {
                 from components.getByName("default")
@@ -310,7 +310,7 @@ dependencies {
 변경 후:
 ```groovy
 dependencies {
-    implementation 'com.nol.lib.reactnative:bridgeLib:1.0.0'
+    implementation 'com.hong.lib:hongfield:1.0.0'
 }
 ```
 
@@ -326,7 +326,7 @@ dependencies {
 변경 후:
 ```kotlin
 dependencies {
-    implementation("com.nol.lib.reactnative:bridgeLib:1.0.0")
+    implementation("com.hong.lib:hongfield:1.0.0")
 }
 ```
 
@@ -343,8 +343,8 @@ version: 1.0.0
 
 변경 후:
 ```
-groupId: com.nol.lib.reactnative
-artifactId: bridgeLib
+groupId: com.hong.lib
+artifactId: hongfield
 version: 1.0.0
 ```
 
@@ -352,7 +352,7 @@ version: 1.0.0
 
 ```bash
 git add docs/android-integration.md docs/superpowers/specs/2026-04-28-bridge-lib-design.md
-git commit -m "docs: update Maven coordinates to com.nol.lib.reactnative:bridgeLib"
+git commit -m "docs: update Maven coordinates to com.hong.lib:hongfield"
 ```
 
 ---
@@ -495,11 +495,11 @@ git commit -m "docs: strengthen Xcode framework target and static linking guidan
 
 - [ ] `./gradlew :bridge-lib:dependencies` 에러 없음
 - [ ] `bridge-lib/build.gradle`에 `autolinkLibrariesWithApp()` 존재
-- [ ] `bridge-lib/build.gradle` Maven groupId = `com.nol.lib.reactnative`, artifactId = `bridgeLib`
+- [ ] `bridge-lib/build.gradle` Maven groupId = `com.hong.lib`, artifactId = `hongfield`
 - [ ] `ios/Podfile`에 `use_frameworks! :linkage => :static` (else 분기)
 - [ ] `ios/Podfile`에 `target 'BridgeLib' do ... inherit! :complete ... end` 존재
 - [ ] `ios/BridgeLib/BridgeLib.swift` 파일 존재, `BridgeLibBundle` 선언
 - [ ] `ios/BridgeLib/BundleConfig.swift:33` → `BridgeLibBundle.url(...)` 사용
-- [ ] `docs/android-integration.md` → `com.nol.lib.reactnative:bridgeLib:1.0.0`
+- [ ] `docs/android-integration.md` → `com.hong.lib:hongfield:1.0.0`
 - [ ] `docs/rn-setup.md` → 섹션 7 존재 (Xcode Framework, Build Settings 표, Bundle script 단계)
 - [ ] `docs/ios-integration.md` → 섹션 2 업데이트, static linking 주의사항 추가
