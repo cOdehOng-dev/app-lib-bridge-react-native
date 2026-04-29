@@ -1,3 +1,5 @@
+import { version } from '../package.json';
+
 type BundleMode = 'dev' | 'assets' | 'remote';
 
 function resolveBundleMode(): BundleMode {
@@ -7,5 +9,5 @@ function resolveBundleMode(): BundleMode {
 
 export const BridgeLib = {
   bundleMode: resolveBundleMode() as BundleMode,
-  version: '1.0.0',
+  version,
 } as const;
