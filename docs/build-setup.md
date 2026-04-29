@@ -93,5 +93,29 @@ npm run build
 
 빌드 후에도 자동 import가 동작하지 않으면 TypeScript 서버를 재시작합니다.
 
-- **VS Code**: `Cmd+Shift+P` → `TypeScript: Restart TS Server`
+- **VS Code / Cursor**: `Cmd+Shift+P` → `TypeScript: Restart TS Server`
 - **WebStorm / IntelliJ**: `File` → `Invalidate Caches`
+
+---
+
+## 자동 import 추천이 뜨지 않는 경우
+
+### 원인
+
+VS Code / Cursor의 `includePackageJsonAutoImports` 기본값은 `"auto"` 입니다.
+이 모드는 **프로젝트 내에서 이미 한 번 이상 import된 패키지만** 자동 추천 대상에 포함합니다.
+
+라이브러리를 처음 추가하거나 모든 import가 제거된 상태에서는 아무리 입력해도 추천이 뜨지 않습니다.
+
+### 해결
+
+`settings.json`에 아래 설정을 추가합니다.
+
+```json
+"typescript.preferences.includePackageJsonAutoImports": "on"
+```
+
+`"on"` 으로 설정하면 `package.json`에 등록된 모든 패키지가 import 여부와 관계없이 항상 자동 추천 대상이 됩니다.
+
+**VS Code / Cursor 기준:**
+`Cmd+Shift+P` → `Open User Settings (JSON)` → 위 설정 추가 후 `TypeScript: Restart TS Server`
