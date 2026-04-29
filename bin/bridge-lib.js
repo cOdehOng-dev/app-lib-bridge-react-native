@@ -10,7 +10,7 @@ const publishIos = require('../scripts/publishIos');
 program
   .name('hongfield')
   .description('hongfield 빌드 및 배포 CLI')
-  .version('1.0.0');
+  .version('1.0.0', '-V, --cli-version', 'CLI 버전 출력');
 
 program
   .command('package:android')
