@@ -2,12 +2,25 @@
 
 ## 1. 패키지 설치
 
+### .npmrc 설정 (최초 1회)
+
+프로젝트 루트에 `.npmrc` 파일을 생성한다:
+
+```
+@codehong-dev:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+`YOUR_GITHUB_TOKEN`은 GitHub → Settings → Developer settings → Personal access tokens에서 `read:packages` 권한으로 발급한다.
+
+### 패키지 설치
+
 ```bash
 # npm
-npm install hongfield
+npm install @codehong-dev/hongfield
 
 # yarn
-yarn add hongfield
+yarn add @codehong-dev/hongfield
 
 # 또는 로컬 경로로 참조 (npm)
 npm install /path/to/app-lib-bridge-react-native
@@ -138,8 +151,8 @@ Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 
 
 ```bash
 # npm
-npx hongfield package:ios --scheme BridgeLib --configuration Release
+npx @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Release
 
 # yarn
-yarn hongfield package:ios --scheme BridgeLib --configuration Release
+yarn @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Release
 ```
