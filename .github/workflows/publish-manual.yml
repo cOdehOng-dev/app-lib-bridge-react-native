@@ -1,0 +1,65 @@
+name: Publish hongfield(수동 배포)
+
+# GitHub Actions 탭에서 직접 실행하는 수동 배포
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Base version (e.g. 1.0.0)'
+        required: true
+        type: string
+      publish_type:
+        description: 'Publish type'
+        required: true
+        type: choice
+        options:
+          - release
+          - snapshot
+        default: snapshot
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@codehong-dev'
+
+      # snapshot이면 타임스탬프 suffix 붙이기
+      - name: Resolve final version
+        id: final
+        run: |
+          if [ "${{ inputs.publish_type }}" = "snapshot" ]; then
+            TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+            echo "VERSION=${{ inputs.version }}-SNAPSHOT.${TIMESTAMP}" >> $GITHUB_OUTPUT
+            echo "TAG=snapshot" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "TAG=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set version
+        run: npm version ${{ steps.final.outputs.VERSION }} --no-git-tag-version
+
+      - name: Publish
+        run: npm publish --tag ${{ steps.final.outputs.TAG }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Published" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: ${{ inputs.publish_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.final.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **dist-tag**: ${{ steps.final.outputs.TAG }}" >> $GITHUB_STEP_SUMMARY
