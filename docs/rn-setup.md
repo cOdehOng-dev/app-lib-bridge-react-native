@@ -158,3 +158,49 @@ npx @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Relea
 # yarn
 yarn @codehong-dev/hongfield package:ios --scheme BridgeLib --configuration Release
 ```
+
+## 8. 버전 관리 및 배포
+
+### 버전 변경 방법
+
+새 버전을 배포할 때는 `package.json`과 `package-lock.json` 두 파일의 `version` 필드를 모두 수정해야 한다.
+
+**방법 A: npm version 명령 사용 (권장)**
+
+```bash
+npm version patch   # 1.0.0 → 1.0.1 (버그 수정)
+npm version minor   # 1.0.0 → 1.1.0 (기능 추가)
+npm version major   # 1.0.0 → 2.0.0 (하위 호환 불가 변경)
+```
+
+이 명령은 `package.json`과 `package-lock.json`을 동시에 업데이트한다.
+
+**방법 B: 직접 수정**
+
+`package.json` (line 3)과 `package-lock.json` (line 2~3) 두 곳의 `"version"` 필드를 같은 값으로 수정한다:
+
+```json
+"version": "1.0.1"
+```
+
+### 배포 트리거
+
+| 방법 | 트리거 조건 | dist-tag |
+|---|---|---|
+| master 브랜치 push | `src/**` 변경 포함 시 자동 실행 | `latest` |
+| `v*` 태그 push | 항상 실행 (paths 무관) | `latest` |
+| develop/feature 브랜치 push | `src/**` 변경 포함 시 자동 실행 | `snapshot` |
+| `snap_v*` 태그 push | 항상 실행 (paths 무관) | `snapshot` |
+| GitHub Actions 수동 실행 | Actions 탭에서 직접 실행 | 선택 |
+
+### 첫 배포 또는 `src/` 변경 없이 배포할 때
+
+```bash
+# 정식 릴리즈
+git tag v1.0.1
+git push origin v1.0.1
+
+# 스냅샷
+git tag snap_v1.0.1
+git push origin snap_v1.0.1
+```
