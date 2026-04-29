@@ -54,8 +54,14 @@ AppRegistry.registerComponent('PaymentScreen', () => PaymentScreen);
 import { useBridgeEvent } from '@codehong-dev/hongfield';
 
 function HomeScreen() {
+  // 기본 사용 (타입 추론)
   useBridgeEvent('USER_LOGGED_IN', (data) => {
     console.log('로그인 사용자:', data.name);
+  });
+
+  // 제네릭으로 타입 명시
+  useBridgeEvent<{ name: string; role: string }>('USER_LOGGED_IN', (data) => {
+    console.log('로그인 사용자:', data.name, data.role);
   });
 
   return <View />;
@@ -69,14 +75,42 @@ import { sendToNative } from '@codehong-dev/hongfield';
 
 function PaymentButton() {
   const handlePress = () => {
+    // 기본 사용
     sendToNative('PAYMENT_DONE', { amount: 9900, currency: 'KRW' });
+
+    // 제네릭으로 타입 명시
+    sendToNative<{ amount: number; currency: string }>(
+      'PAYMENT_DONE',
+      { amount: 9900, currency: 'KRW' }
+    );
   };
 
   return <Button onPress={handlePress} title="결제" />;
 }
 ```
 
-## 5. 번들 빌드 및 네이티브 패키징
+## 5. 네이티브 화면 닫기 (RN → 네이티브)
+
+RN에서 네이티브 컨테이너(Activity/Fragment/ViewController)를 닫으려면 `popToNative()`를 호출한다.
+
+```typescript
+import { popToNative } from '@codehong-dev/hongfield';
+
+function MyScreen() {
+  return (
+    <Button
+      onPress={() => popToNative()}
+      title="닫기"
+    />
+  );
+}
+```
+
+네이티브 측에서 `onPopRequested` 콜백을 등록해야 동작한다.
+- Android: `BridgeLibActivity.onPopRequested` / `BridgeLibFragment.onPopRequested` 참고
+- iOS: `BridgeLibViewController.onPopRequested` 참고
+
+## 6. 번들 빌드 및 네이티브 패키징
 
 번들 빌드는 AAR / XCFramework 빌드 시 자동으로 실행됩니다. 별도 실행 불필요합니다.
 
@@ -120,7 +154,7 @@ npx hongfield package:ios --scheme BridgeLib --configuration Release
 npx hongfield publish:ios --version 1.0.0
 ```
 
-## 6. Codegen 설정 확인
+## 7. Codegen 설정 확인
 
 `package.json`에 다음이 포함되어 있어야 한다:
 
@@ -134,7 +168,7 @@ npx hongfield publish:ios --version 1.0.0
 }
 ```
 
-## 7. iOS Framework 타겟 설정 (Xcode, 최초 1회)
+## 8. iOS Framework 타겟 설정 (Xcode, 최초 1회)
 
 BridgeLib을 XCFramework로 패키징하기 위해 Xcode에서 Framework 타겟을 한 번 생성해야 한다.
 
@@ -181,7 +215,7 @@ Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 
 ./node_modules/@codehong-dev/hongfield/package-ios.sh --scheme BridgeLib --configuration Release
 ```
 
-## 8. 버전 관리 및 배포
+## 9. 버전 관리 및 배포
 
 ### 버전 변경 방법
 

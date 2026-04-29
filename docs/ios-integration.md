@@ -92,15 +92,21 @@ Mac IP 확인: `ifconfig | grep "inet "` 또는 시스템 환경설정 > 네트�
 ```swift
 import BridgeLib
 
-// Push
+// Push — onPopRequested 등록
 let vc = BridgeLibViewController(
     moduleName: "HomeScreen",
     initialProps: ["userId": "123", "theme": "dark"]
 )
+vc.onPopRequested = { [weak self] in
+    self?.navigationController?.popViewController(animated: true)
+}
 navigationController?.pushViewController(vc, animated: true)
 
-// Modal
+// Modal — onPopRequested 등록
 let vc = BridgeLibViewController(moduleName: "PaymentScreen")
+vc.onPopRequested = { [weak self] in
+    self?.dismiss(animated: true)
+}
 present(vc, animated: true)
 ```
 
@@ -112,11 +118,19 @@ import BridgeLib
 // 네이티브 → RN
 BridgeEventEmitter.shared.send("USER_LOGGED_IN", body: ["name": "Oscar"])
 
-// RN → 네이티브 리스너
+// RN → 네이티브 리스너 (기본)
 BridgeEventEmitter.shared.on("PAYMENT_DONE") { data in
     if let amount = data["amount"] as? Double {
         self.processPayment(amount: amount)
     }
+}
+
+// 제네릭 이벤트 예시 (RN 측에서 useBridgeEvent<T> 사용 시 타입 대응)
+// Swift는 런타임 타입이므로 as? 캐스팅으로 검증
+BridgeEventEmitter.shared.on("ORDER_UPDATED") { data in
+    guard let orderId = data["orderId"] as? String,
+          let status = data["status"] as? String else { return }
+    self.updateOrderUI(orderId: orderId, status: status)
 }
 
 // 리스너 해제

@@ -126,6 +126,31 @@ supportFragmentManager.beginTransaction()
     .commit()
 ```
 
+### popToNative 콜백 등록
+
+RN이 `popToNative()`를 호출했을 때 실행될 콜백을 등록한다.
+
+**Fragment:**
+```kotlin
+val fragment = BridgeLibFragment.newInstance("HomeScreen")
+fragment.onPopRequested = { supportFragmentManager.popBackStack() }
+
+supportFragmentManager.beginTransaction()
+    .replace(R.id.container, fragment)
+    .addToBackStack(null)
+    .commit()
+```
+
+### Back 버튼 제어
+
+```kotlin
+// RN 내부 스택이 소진될 때까지 네이티브 뒤로가기 비활성화
+fragment.setBackEnabled(false)
+
+// 네이티브 뒤로가기 재활성화
+fragment.setBackEnabled(true)
+```
+
 ## 6. 이벤트 통신
 
 ```kotlin
@@ -140,6 +165,20 @@ BridgeEventBus.on("PAYMENT_DONE") { data ->
 
 // 리스너 해제
 BridgeEventBus.off("PAYMENT_DONE")
+```
+
+### 이벤트 큐 동작
+
+`BridgeLibHost.init()` 이후 React Native가 완전히 로딩되기 전에 `BridgeEventBus.send()`를 호출하면 이벤트가 버퍼링됩니다. RN 모듈이 등록되는 즉시 자동으로 flush되므로 이벤트 유실 없이 동작합니다.
+
+```kotlin
+// Application.onCreate()에서 이벤트를 즉시 전송해도 안전
+override fun onCreate() {
+    super.onCreate()
+    BridgeLibHost.init(application = this)
+    // RN 로딩 전이어도 큐에 쌓임 → 로딩 완료 시 자동 전송
+    BridgeEventBus.send("APP_INIT", mapOf("version" to BuildConfig.VERSION_NAME))
+}
 ```
 
 ## 7. OTA 번들 설정
