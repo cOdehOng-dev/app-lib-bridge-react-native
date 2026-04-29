@@ -6,10 +6,10 @@ import Foundation
 
     private let queue = DispatchQueue(label: "com.bridgelib.BridgeEventEmitter", attributes: .concurrent)
     private var listeners: [String: ([String: Any]) -> Void] = [:]
+    private var popToNativeCallback: (() -> Void)?
 
     private override init() {}
 
-    /// 네이티브 → RN 이벤트 전송
     @objc public func send(_ eventName: String, body: [String: Any] = [:]) {
         guard let module = NativeBridgeModule.shared else {
             NSLog("[BridgeEventEmitter] React Native가 실행 중이 아닙니다. BridgeLibManager.initialize()가 호출되었는지 확인하세요.")
@@ -18,17 +18,24 @@ import Foundation
         module.emitToJS(eventName: eventName, data: body)
     }
 
-    /// RN → 네이티브 이벤트 리스너 등록
     @objc public func on(_ eventName: String, callback: @escaping ([String: Any]) -> Void) {
         queue.async(flags: .barrier) { self.listeners[eventName] = callback }
     }
 
-    /// RN → 네이티브 이벤트 리스너 해제
     @objc public func off(_ eventName: String) {
         queue.async(flags: .barrier) { self.listeners.removeValue(forKey: eventName) }
     }
 
     internal func handleFromRN(name: String, data: [String: Any]) {
-        queue.sync { self.listeners[name] }?(data)
+        // queue.sync → queue.async: 데드락 방지
+        queue.async { self.listeners[name]?(data) }
+    }
+
+    internal func setPopToNativeCallback(_ callback: (() -> Void)?) {
+        queue.async(flags: .barrier) { self.popToNativeCallback = callback }
+    }
+
+    internal func handlePopToNative() {
+        queue.async { self.popToNativeCallback?() }
     }
 }
