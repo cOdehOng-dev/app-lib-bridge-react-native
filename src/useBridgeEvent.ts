@@ -16,6 +16,7 @@ export function useBridgeEvent<T extends Record<string, unknown> = Record<string
 
     const subscription = emitter.addListener(
       'BridgeEvent',
+      // Developer-facing assertion: runtime does not enforce T shape (NativeEventEmitter is untyped).
       (event: { name: string; data: T }) => {
         if (event.name === eventName) {
           callbackRef.current(event.data);
