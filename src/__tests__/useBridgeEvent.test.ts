@@ -14,8 +14,6 @@ jest.mock('react-native', () => ({
   NativeModules: {
     NativeBridgeModule: {},
   },
-  useEffect: jest.requireActual('react').useEffect,
-  useRef: jest.requireActual('react').useRef,
 }));
 
 jest.mock('../specs/NativeBridgeModule', () => ({
@@ -41,7 +39,6 @@ describe('useBridgeEvent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     capturedListener = null;
-    mockSubscriptionRemove.mockClear();
   });
 
   test('구독 시 NativeBridgeModule.addListener를 BridgeEvent로 호출한다', () => {
