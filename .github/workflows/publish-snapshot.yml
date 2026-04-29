@@ -9,8 +9,6 @@ on:
     branches:
       - develop
       - 'feature/**'
-    paths:
-      - 'src/**'
     tags:
       - 'snap_v*'
 
