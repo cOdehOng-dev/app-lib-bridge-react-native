@@ -61,12 +61,24 @@ app-lib-bridge-react-native/
 {
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.lib.json"
   },
   "files": [
     "dist/",
-    "src/"
+    "src/",
+    "bin/",
+    "scripts/",
+    "android/bridge-lib/",
+    "ios/BridgeLib/",
+    "package-android.sh",
+    "package-ios.sh"
   ]
 }
 ```

@@ -129,69 +129,57 @@ npm publish
 ## CLI (소비앱에서 실행)
 
 Brownfield 구조에서 소비앱(네이티브 Android/iOS 앱)이 React Native를 임베드할 때 사용합니다.
-패키지를 설치하면 `hongfield` CLI가 자동으로 등록됩니다.
+패키지를 설치하면 `package-android.sh` / `package-ios.sh` 스크립트가 `node_modules` 안에 포함됩니다.
 
 **전체 흐름**
 
 ```
 소비앱에서 npm install @codehong-dev/hongfield
-  └─ npx hongfield package:android
+  └─ ./node_modules/@codehong-dev/hongfield/package-android.sh
        ├─ JS 번들 → android/app/src/main/assets/index.android.bundle
-       └─ AAR     → output/android/bridge-lib-release.aar (네이티브 프로젝트에 통합)
+       ├─ AAR     → output/android/bridge-lib-release.aar
+       └─ Maven   → ~/.m2/repository (네이티브 프로젝트에서 의존성으로 참조)
 
-  └─ npx hongfield package:ios
+  └─ ./node_modules/@codehong-dev/hongfield/package-ios.sh
        ├─ JS 번들 → ios/main.jsbundle
-       └─ XCFramework → output/ios/BridgeLib.xcframework (네이티브 프로젝트에 통합)
+       └─ XCFramework → output/ios/BridgeLib.xcframework
 ```
 
 ---
 
-### Android AAR 빌드
+### Android AAR 빌드 + Maven 배포
 
-소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 순서로 자동 실행됩니다.
+JS 번들 빌드 → AAR 빌드 → 로컬 Maven 배포 순서로 자동 실행됩니다.
 
 ```bash
-npx hongfield package:android
+./node_modules/@codehong-dev/hongfield/package-android.sh
 ```
 
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
 | `--variant` | 빌드 variant | `Release` |
 | `--module-name` | 출력 파일명 | `bridge-lib` |
+| `--repo` | Maven 저장소 경로 | `~/.m2/repository` |
+| `--skip-maven` | Maven 배포 건너뜀 | - |
 
 ```bash
-# Debug 빌드
-npx hongfield package:android --variant Debug
+# AAR만 빌드 (Maven 배포 제외)
+./node_modules/@codehong-dev/hongfield/package-android.sh --skip-maven
 
-# 출력 파일명 변경
-npx hongfield package:android --module-name my-lib
+# Debug 빌드
+./node_modules/@codehong-dev/hongfield/package-android.sh --variant Debug
 ```
 
 결과물: `output/android/bridge-lib-release.aar`
 
 ---
 
-### Android 로컬 Maven 배포
-
-AAR을 로컬 Maven(`~/.m2`)에 배포합니다. 소비앱의 네이티브 Android 프로젝트에서 Maven 의존성으로 참조할 수 있습니다.
-
-```bash
-npx hongfield publish:android
-```
-
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--module-name` | 모듈 이름 | `bridge-lib` |
-| `--repo` | Maven 저장소 경로 | `~/.m2/repository` |
-
----
-
 ### iOS XCFramework 빌드
 
-소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
+JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
 
 ```bash
-npx hongfield package:ios
+./node_modules/@codehong-dev/hongfield/package-ios.sh
 ```
 
 | 옵션 | 설명 | 기본값 |
@@ -201,11 +189,8 @@ npx hongfield package:ios
 | `--output` | 출력 디렉터리 경로 | `output/ios` |
 
 ```bash
-# 커스텀 스킴
-npx hongfield package:ios --scheme MyScheme
-
 # 출력 경로 지정
-npx hongfield package:ios --output ./build/ios
+./node_modules/@codehong-dev/hongfield/package-ios.sh --output ./build/ios
 ```
 
 결과물: `output/ios/BridgeLib.xcframework`

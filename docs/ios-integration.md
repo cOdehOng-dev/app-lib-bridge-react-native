@@ -2,14 +2,10 @@
 
 ## 1. XCFramework 빌드
 
-bridge-lib 레포에서 (Xcode 스킴 `BridgeLib` 설정 후):
+소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
 
 ```bash
-# npm
-npx hongfield package:ios --scheme BridgeLib --configuration Release
-
-# yarn
-yarn hongfield package:ios --scheme BridgeLib --configuration Release
+./node_modules/@codehong-dev/hongfield/package-ios.sh
 ```
 
 결과물: `output/ios/BridgeLib.xcframework`

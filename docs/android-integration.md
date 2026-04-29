@@ -1,28 +1,20 @@
 # Android 네이티브 연동 가이드
 
-## 1. AAR 빌드
+## 1. AAR 빌드 및 로컬 Maven 배포
 
-bridge-lib 레포에서:
+소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 → Maven 배포 순서로 자동 실행됩니다.
 
 ```bash
-# npm
-npx hongfield package:android --variant Release --module-name reactnativeapp
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp
+```
 
-# yarn
-yarn hongfield package:android --variant Release --module-name reactnativeapp
+Maven 배포 없이 AAR만 빌드하려면:
+
+```bash
+./node_modules/@codehong-dev/hongfield/package-android.sh --module-name reactnativeapp --skip-maven
 ```
 
 결과물: `output/android/reactnativeapp-release.aar`
-
-## 2. 로컬 Maven 배포 (선택)
-
-```bash
-# npm
-npx hongfield publish:android --module-name reactnativeapp
-
-# yarn
-yarn hongfield publish:android --module-name reactnativeapp
-```
 
 ## 3. 호스트 앱에 AAR 추가
 
@@ -61,7 +53,7 @@ repositories {
 
 // app/build.gradle
 dependencies {
-    implementation 'com.nol.lib.reactnative:bridgeLib:1.0.0'
+    implementation 'com.nol.lib.reactnative:bridgeLib:1.0.5'
 }
 ```
 
@@ -74,7 +66,7 @@ repositories {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nol.lib.reactnative:bridgeLib:1.0.0")
+    implementation("com.nol.lib.reactnative:bridgeLib:1.0.5")
 }
 ```
 
