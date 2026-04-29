@@ -12,11 +12,16 @@ npx bridge-lib package:ios --scheme BridgeLib --configuration Release
 
 ## 2. Xcode 프레임워크 타겟 설정 (최초 1회)
 
-1. Xcode에서 `ios/BridgeLib/` 폴더의 Swift/ObjC 파일들을 새 Framework 타겟에 추가
-2. 타겟 이름: `BridgeLib`
-3. `Build Settings > Build Library for Distribution`: `YES`
-4. `Build Settings > Swift Language Version`: `Swift 5`
-5. `Product > Scheme > New Scheme`으로 `BridgeLib` 스킴 생성
+React Native 프로젝트에서 BridgeLib Framework 타겟을 생성하고 설정해야 한다.
+전체 절차는 [RN 프로젝트 설정 가이드 — 섹션 7](./rn-setup.md#7-ios-framework-타겟-설정-xcode-최초-1회)을 참고한다.
+
+> **필수 Build Settings 요약:**
+> - Build Libraries for Distribution: `YES`
+> - User Script Sandboxing: `NO`
+> - Skip Install: `NO`
+> - Enable Module Verifier: `NO`
+>
+> Bundle React Native code and images 스크립트를 BridgeLib 타겟의 Build Phases에 추가해야 JS 번들이 XCFramework에 포함된다.
 
 ## 3. 호스트 앱에 XCFramework 추가
 
@@ -29,6 +34,8 @@ npx bridge-lib package:ios --scheme BridgeLib --configuration Release
 pod 'React-Core', :path => '../node_modules/react-native'
 pod 'React-RCTAppDelegate', :path => '../node_modules/react-native'
 ```
+
+> **Static linking 필수:** BridgeLib XCFramework는 static linking 환경에서 빌드되었다. 호스트 앱 Podfile에서 React Native 의존성을 dynamic으로 링크하면 충돌이 발생할 수 있다.
 
 ## 4. AppDelegate 초기화
 
