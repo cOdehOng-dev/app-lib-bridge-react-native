@@ -5,6 +5,7 @@ const { program } = require('commander');
 const packageAndroid = require('../scripts/packageAndroid');
 const publishAndroid = require('../scripts/publishAndroid');
 const packageIos = require('../scripts/packageIos');
+const publishIos = require('../scripts/publishIos');
 
 program
   .name('hongfield')
@@ -40,6 +41,24 @@ program
       scheme: options.scheme,
       configuration: options.configuration,
       output: options.output,
+    });
+  });
+
+program
+  .command('publish:ios')
+  .description('iOS XCFramework를 로컬 CocoaPods 스펙 레포에 배포')
+  .option('--module-name <name>', '모듈 이름', 'bridge-lib')
+  .option('--group-id <id>', 'groupId', 'com.hong.lib')
+  .option('--artifact-id <id>', 'artifactId (pod name)', 'hongfield')
+  .option('--version <version>', '버전', '1.0.0')
+  .option('--repo <path>', '로컬 스펙 레포 경로 (기본: ~/.cocoapods/local)')
+  .action((options) => {
+    publishIos({
+      moduleName: options.moduleName,
+      groupId: options.groupId,
+      artifactId: options.artifactId,
+      version: options.version,
+      repo: options.repo,
     });
   });
 

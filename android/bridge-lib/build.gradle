@@ -58,8 +58,8 @@ dependencies {
 publishing {
     publications {
         mavenAar(MavenPublication) {
-            groupId 'com.nol.lib.reactnative'
-            artifactId 'bridgeLib'
+            groupId 'com.hong.lib'
+            artifactId 'hongfield'
             version '1.0.0'
             afterEvaluate {
                 from components.getByName("default")
