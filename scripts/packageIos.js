@@ -25,6 +25,13 @@ function packageIos({ scheme = 'BridgeLib', configuration = 'Release', output } 
 
   fs.mkdirSync(archivesDir, { recursive: true });
 
+  // Verify workspace exists
+  if (!fs.existsSync(workspace)) {
+    console.error(`[bridge-lib] 오류: 워크스페이스를 찾을 수 없습니다: ${workspace}`);
+    console.error('[bridge-lib] ios/ 폴더에서 pod install을 실행했는지 확인하세요.');
+    process.exit(1);
+  }
+
   console.log(`\n[bridge-lib] iOS XCFramework 빌드 시작: ${scheme} (${configuration})`);
 
   const run = (cmd) => execSync(cmd, { cwd: rootDir, stdio: 'inherit' });

@@ -94,14 +94,25 @@ BridgeEventEmitter.shared.off("PAYMENT_DONE")
 
 ## 7. OTA/CodePush 번들 설정
 
-OTA로 번들이 다운로드된 후:
+OTA로 새 번들이 다운로드된 후, 다음 앱 콜드 스타트 시 적용되도록 번들 URL을 저장해두어야 한다.  
+`BridgeLibManager.initialize()`는 최초 1회만 적용되므로 런타임에 재호출해도 번들이 교체되지 않는다.
 
 ```swift
+// OTA 다운로드 완료 후 — URL을 영구 저장소에 기록
+let downloadedBundleURL = URL(fileURLWithPath: "/path/to/downloaded/bundle.js")
+UserDefaults.standard.set(downloadedBundleURL.path, forKey: "bridge_lib_bundle_path")
+
+// AppDelegate — 앱 시작 시 저장된 경로 읽기
+let localBundleURL: URL? = {
+    guard let path = UserDefaults.standard.string(forKey: "bridge_lib_bundle_path") else { return nil }
+    return URL(fileURLWithPath: path)
+}()
+
 BridgeLibManager.shared.initialize(
     bundleConfig: BundleConfig(
         devURL: URL(string: "http://localhost:8081/index.bundle")!,
         assetName: "main",
-        localBundleURL: URL(fileURLWithPath: "/path/to/downloaded/bundle.js")
+        localBundleURL: localBundleURL   // nil이면 assets 번들 사용
     )
 )
 ```

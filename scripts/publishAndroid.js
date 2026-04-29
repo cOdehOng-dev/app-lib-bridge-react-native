@@ -24,7 +24,7 @@ function publishAndroid({ moduleName = 'bridge-lib', repo } = {}) {
 
   try {
     execSync(
-      `${gradlew} :bridge-lib:publishToMavenLocal -PmavenRepoPath=${repoPath}`,
+      `${gradlew} :bridge-lib:publishReleasePublicationToLocalRepository -PmavenRepoPath=${repoPath}`,
       { cwd: androidDir, stdio: 'inherit' }
     );
   } catch (err) {

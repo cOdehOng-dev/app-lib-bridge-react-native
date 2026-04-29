@@ -20,9 +20,11 @@ import React
         self.localBundleURL = localBundleURL
     }
 
+    /// Resolves the active bundle URL based on build configuration.
+    /// Internal use only — consumed by BridgeLibFactoryDelegate.
     func resolvedURL() -> URL? {
         #if DEBUG
-        return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+        return devURL
         #else
         if let localURL = localBundleURL {
             return localURL
