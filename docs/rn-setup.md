@@ -88,3 +88,44 @@ react-native bundle \
   }
 }
 ```
+
+## 7. iOS Framework 타겟 설정 (Xcode, 최초 1회)
+
+BridgeLib을 XCFramework로 패키징하기 위해 Xcode에서 Framework 타겟을 한 번 생성해야 한다.
+
+### 타겟 생성
+
+1. `ios/<project>.xcworkspace` 열기
+2. File → New → Target → Framework 선택
+3. Product Name: `BridgeLib`, Language: `Swift`
+4. 생성된 `BridgeLib` 폴더를 우클릭 → **Convert to Group** (CocoaPods 호환 필수)
+5. `BridgeLibTests` 폴더도 Convert to Group
+
+### 필수 Build Settings
+
+BridgeLib 타겟을 선택하고 Build Settings 탭에서 다음을 설정한다:
+
+| Build Setting | Value | 이유 |
+|---|---|---|
+| Build Libraries for Distribution | YES | Swift module interface 생성 (XCFramework 필수) |
+| User Script Sandboxing | NO | JS 번들 빌드 스크립트가 파일을 수정할 수 있도록 허용 |
+| Skip Install | NO | Xcode가 archive 시 framework 파일을 생성하도록 보장 |
+| Enable Module Verifier | NO | 빌드 시 모듈 검증 생략 (빌드 속도 개선) |
+
+### Bundle React Native code and images 스크립트 추가
+
+Xcode는 JS 번들을 framework에 포함시키기 위한 스크립트를 자동으로 추가하지 않는다. 아래 단계로 직접 추가한다:
+
+1. `app-lib-bridge-react-native` 타겟 → Build Phases → `Bundle React Native code and images` 스크립트 전체 복사
+2. BridgeLib 타겟 → Build Phases → **+** → New Run Script Phase
+3. 복사한 스크립트 붙여넣기
+4. 단계 이름을 `Bundle React Native code and images`로 변경
+5. **Input Files** 추가:
+   - `$(SRCROOT)/.xcode.env.local`
+   - `$(SRCROOT)/.xcode.env`
+
+### Scheme 생성
+
+Product → Scheme → New Scheme → `BridgeLib` 타겟 선택 → `BridgeLib` 이름으로 생성
+
+이후 `npx bridge-lib package:ios --scheme BridgeLib --configuration Release` 명령어로 XCFramework를 빌드한다.
