@@ -23,7 +23,9 @@
     "bin/",
     "scripts/",
     "android/bridge-lib/",
-    "ios/BridgeLib/"
+    "ios/BridgeLib/",
+    "package-android.sh",
+    "package-ios.sh"
   ],
   "codegenConfig": {
     "name": "NativeBridgeModuleSpec",
