@@ -1,6 +1,6 @@
 {
   "name": "@codehong-dev/hongfield",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Native-React Native bridge library for Android and iOS",
   "private": false,
   "publishConfig": {
@@ -25,7 +25,8 @@
     "android/bridge-lib/",
     "ios/BridgeLib/",
     "package-android.sh",
-    "package-ios.sh"
+    "package-ios.sh",
+    "react-native.config.js"
   ],
   "codegenConfig": {
     "name": "NativeBridgeModuleSpec",
