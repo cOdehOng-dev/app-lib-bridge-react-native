@@ -22,7 +22,7 @@ import React
 
     /// Resolves the active bundle URL based on build configuration.
     /// Internal use only — consumed by BridgeLibFactoryDelegate.
-    func resolvedURL() -> URL? {
+    internal func resolvedURL() -> URL? {
         #if DEBUG
         return devURL
         #else
