@@ -20,8 +20,9 @@ npx bridge-lib publish:android --module-name reactnativeapp
 
 ### 방법 A: 파일 직접 추가
 
-`app/libs/` 폴더에 AAR 복사 후 `build.gradle`에 추가:
+`app/libs/` 폴더에 AAR 복사 후 의존성 추가:
 
+**Groovy (build.gradle)**
 ```groovy
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
@@ -31,15 +32,41 @@ dependencies {
 }
 ```
 
+**Kotlin DSL (build.gradle.kts)**
+```kotlin
+dependencies {
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
+    // React Native 의존성
+    implementation("com.facebook.react:react-android:0.84.1")
+    implementation("com.facebook.react:hermes-android:0.84.1")
+}
+```
+
 ### 방법 B: 로컬 Maven 사용
 
+**Groovy (build.gradle / settings.gradle)**
 ```groovy
+// settings.gradle 또는 프로젝트 수준 build.gradle의 repositories 블록
 repositories {
     maven { url "${System.properties['user.home']}/.m2/repository" }
 }
 
+// app/build.gradle
 dependencies {
     implementation 'com.bridgelib:bridge-lib:1.0.0'
+}
+```
+
+**Kotlin DSL (settings.gradle.kts / build.gradle.kts)**
+```kotlin
+// settings.gradle.kts 또는 프로젝트 수준 build.gradle.kts의 repositories 블록
+repositories {
+    maven { url = uri("${System.getProperty("user.home")}/.m2/repository") }
+}
+
+// app/build.gradle.kts
+dependencies {
+    implementation("com.bridgelib:bridge-lib:1.0.0")
 }
 ```
 
@@ -70,6 +97,52 @@ class MyApplication : Application() {
         )
     }
 }
+```
+
+### `devUrl` 값 결정 방법
+
+Metro 개발 서버에 접속하는 URL로, 실행 환경에 따라 다르다.
+
+| 환경 | devUrl |
+|---|---|
+| Android 에뮬레이터 | `http://10.0.2.2:8081/index.bundle` |
+| 실기기 (USB/Wi-Fi) | `http://<개발 PC IP>:8081/index.bundle` |
+
+- **에뮬레이터**: Android 에뮬레이터에서 `10.0.2.2`는 호스트 PC의 `localhost`를 가리키는 특수 주소다.
+- **실기기**: 개발 PC와 기기가 같은 Wi-Fi에 연결된 상태에서 PC의 로컬 IP를 사용한다. PC IP는 macOS 기준 `ifconfig | grep "inet "` 또는 시스템 환경설정 > 네트워크에서 확인할 수 있다.
+- 포트 `8081`은 Metro의 기본값이다. `react-native start --port 9090` 처럼 변경한 경우 해당 포트를 사용한다.
+
+### `localBundlePath` 값 결정 방법
+
+OTA(CodePush 등)로 다운로드한 번들 파일의 **기기 내 절대 경로**다. `null`이면 `assetPath`의 assets 번들을 사용한다.
+
+앱 전용 내부 저장소 경로를 사용하는 것이 권장된다 (외부 저장소 권한 불필요):
+
+```kotlin
+// 권장: context.filesDir 기반 경로 (예: /data/data/com.example.myapp/files/bundle.js)
+val bundlePath = "${context.filesDir.absolutePath}/bridge_bundle.js"
+```
+
+CodePush를 사용한다면 다운로드 완료 콜백에서 받은 경로를 저장한 뒤 앱 재시작 시 읽어서 전달한다:
+
+```kotlin
+// OTA 다운로드 완료 시 경로 저장
+val prefs = getSharedPreferences("bridge_lib", Context.MODE_PRIVATE)
+prefs.edit().putString("bundle_path", downloadedFilePath).apply()
+
+// Application.onCreate() 에서 읽기
+val localPath = getSharedPreferences("bridge_lib", Context.MODE_PRIVATE)
+    .getString("bundle_path", null)
+
+BridgeLibHost.init(
+    application = this,
+    bundleConfig = BundleConfig(
+        devUrl = "http://10.0.2.2:8081/index.bundle",
+        assetPath = "index.android.bundle",
+        localBundlePath = localPath,   // null이면 assets 번들 사용
+        isDebug = BuildConfig.DEBUG
+    )
+)
 ```
 
 ## 6. RN 화면 실행
@@ -120,16 +193,24 @@ BridgeEventBus.off("PAYMENT_DONE")
 
 ## 8. OTA/CodePush 번들 설정
 
-OTA로 새 번들이 다운로드된 후:
+OTA로 새 번들이 다운로드된 후, 다음 앱 재시작 시 적용되도록 경로를 저장해둔다.  
+`BridgeLibHost.init()`은 최초 1회만 적용되므로 런타임에 재호출해도 번들이 교체되지 않는다.
 
 ```kotlin
-// 다음 앱 재시작 시 적용
+// OTA 다운로드 완료 시 경로 저장
+val prefs = getSharedPreferences("bridge_lib", Context.MODE_PRIVATE)
+prefs.edit().putString("bundle_path", downloadedFilePath).apply()
+
+// Application.onCreate() — 저장된 경로 읽기
+val localPath = getSharedPreferences("bridge_lib", Context.MODE_PRIVATE)
+    .getString("bundle_path", null)
+
 BridgeLibHost.init(
     application = this,
     bundleConfig = BundleConfig(
         devUrl = "http://10.0.2.2:8081/index.bundle",
         assetPath = "index.android.bundle",
-        localBundlePath = "/data/data/com.example/files/bundle.js",  // 다운로드 경로
+        localBundlePath = localPath,
         isDebug = BuildConfig.DEBUG
     )
 )

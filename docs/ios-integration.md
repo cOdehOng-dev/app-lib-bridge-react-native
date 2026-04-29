@@ -56,6 +56,54 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
+### `devURL` 값 결정 방법
+
+Metro 개발 서버에 접속하는 URL로, 실행 환경에 따라 다르다.
+
+| 환경 | devURL |
+|---|---|
+| iOS 시뮬레이터 | `http://localhost:8081/index.bundle` |
+| 실기기 (USB/Wi-Fi) | `http://<개발 Mac IP>:8081/index.bundle` |
+
+- **시뮬레이터**: Mac과 같은 네트워크 스택을 공유하므로 `localhost`를 그대로 사용한다.
+- **실기기**: 기기와 Mac이 같은 Wi-Fi에 연결된 상태에서 Mac의 로컬 IP를 사용한다. IP는 시스템 환경설정 > 네트워크 또는 터미널에서 `ifconfig | grep "inet "` 으로 확인한다.
+- 포트 `8081`은 Metro의 기본값이다. `react-native start --port 9090` 처럼 변경한 경우 해당 포트를 사용한다.
+- 실기기 사용 시 `Info.plist`에 ATS 예외 설정이 필요하다 (아래 섹션 8 참고).
+
+### `localBundleURL` 값 결정 방법
+
+OTA(CodePush 등)로 다운로드한 번들 파일의 **기기 내 파일 URL**이다. `nil`이면 `assetName`의 번들을 사용한다.
+
+앱 샌드박스 내 쓰기 가능한 경로를 사용해야 한다. Documents 디렉토리 또는 Library/Application Support가 일반적이다:
+
+```swift
+// Documents 디렉토리 기반 경로 예시
+let bundleURL = FileManager.default
+    .urls(for: .documentDirectory, in: .userDomainMask)[0]
+    .appendingPathComponent("bridge_bundle.js")
+```
+
+CodePush를 사용한다면 다운로드 완료 콜백에서 URL을 `UserDefaults`에 저장한 뒤 앱 재시작 시 읽어서 전달한다:
+
+```swift
+// OTA 다운로드 완료 시 경로 저장
+UserDefaults.standard.set(downloadedBundleURL.path, forKey: "bridge_lib_bundle_path")
+
+// AppDelegate — 앱 시작 시 저장된 경로 읽기
+let localBundleURL: URL? = {
+    guard let path = UserDefaults.standard.string(forKey: "bridge_lib_bundle_path") else { return nil }
+    return URL(fileURLWithPath: path)
+}()
+
+BridgeLibManager.shared.initialize(
+    bundleConfig: BundleConfig(
+        devURL: URL(string: "http://localhost:8081/index.bundle")!,
+        assetName: "main",
+        localBundleURL: localBundleURL   // nil이면 assets 번들 사용
+    )
+)
+```
+
 ## 5. RN 화면 실행
 
 ```swift
