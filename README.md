@@ -1,3 +1,37 @@
+# @codehong-dev/hongfield
+
+Native-React Native bridge library for Android and iOS.
+
+## Installation
+
+이 패키지는 [GitHub Packages](https://github.com/cOdehOng-dev/app-lib-bridge-react-native/packages)에 배포되어 있습니다.
+
+### 1. .npmrc 설정
+
+프로젝트 루트에 `.npmrc` 파일을 생성하고 아래 내용을 추가합니다.
+
+```
+@codehong-dev:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+> `YOUR_GITHUB_TOKEN`: GitHub → Settings → Developer settings → Personal access tokens → `read:packages` 권한으로 발급
+
+### 2. 패키지 설치
+
+```bash
+npm install @codehong-dev/hongfield
+# 또는
+yarn add @codehong-dev/hongfield
+```
+
+> **주의**: `.npmrc`에 토큰이 포함되므로 반드시 `.gitignore`에 추가하세요.
+> ```
+> echo ".npmrc" >> .gitignore
+> ```
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
