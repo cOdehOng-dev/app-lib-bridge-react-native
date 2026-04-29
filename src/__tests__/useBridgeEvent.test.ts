@@ -1,100 +1,93 @@
-jest.mock('../specs/NativeBridgeModule', () => ({
-  addListener: jest.fn(),
-  removeListeners: jest.fn(),
-}));
+import React from 'react';
+import { act, create } from 'react-test-renderer';
 
-const mockAddListener = jest.fn();
+let capturedListener: ((event: { name: string; data: Record<string, unknown> }) => void) | null = null;
+const mockSubscriptionRemove = jest.fn();
 
 jest.mock('react-native', () => ({
-  NativeEventEmitter: jest.fn(() => ({
-    addListener: mockAddListener,
+  NativeEventEmitter: jest.fn().mockImplementation(() => ({
+    addListener: jest.fn((_: string, listener: (event: { name: string; data: Record<string, unknown> }) => void) => {
+      capturedListener = listener;
+      return { remove: mockSubscriptionRemove };
+    }),
   })),
   NativeModules: {
     NativeBridgeModule: {},
   },
+  useEffect: jest.requireActual('react').useEffect,
+  useRef: jest.requireActual('react').useRef,
 }));
 
-describe('useBridgeEvent', () => {
-  let mockRemove: jest.Mock;
-  let capturedListener: ((event: any) => void) | null = null;
+jest.mock('../specs/NativeBridgeModule', () => ({
+  __esModule: true,
+  default: {
+    addListener: jest.fn(),
+    removeListeners: jest.fn(),
+  },
+}));
 
+import { useBridgeEvent } from '../useBridgeEvent';
+import NativeBridgeModule from '../specs/NativeBridgeModule';
+
+const mockAddListener = NativeBridgeModule.addListener as jest.Mock;
+const mockRemoveListeners = NativeBridgeModule.removeListeners as jest.Mock;
+
+function Wrapper({ eventName, callback }: { eventName: string; callback: (data: Record<string, unknown>) => void }) {
+  useBridgeEvent(eventName, callback);
+  return null;
+}
+
+describe('useBridgeEvent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     capturedListener = null;
+    mockSubscriptionRemove.mockClear();
+  });
 
-    mockRemove = jest.fn();
-    mockAddListener.mockImplementation((eventName: string, listener: Function) => {
-      if (eventName === 'BridgeEvent') {
-        capturedListener = listener as any;
-      }
-      return { remove: mockRemove };
+  test('구독 시 NativeBridgeModule.addListener를 BridgeEvent로 호출한다', () => {
+    act(() => {
+      create(React.createElement(Wrapper, { eventName: 'MY_EVENT', callback: jest.fn() }));
     });
+    expect(mockAddListener).toHaveBeenCalledWith('BridgeEvent');
   });
 
-  test('useBridgeEvent is exported as a function', () => {
-    const { useBridgeEvent } = require('../useBridgeEvent');
-    expect(typeof useBridgeEvent).toBe('function');
-  });
-
-  test('useBridgeEvent module exports a hook function', () => {
-    const useBridgeEventModule = require('../useBridgeEvent');
-    expect(useBridgeEventModule).toHaveProperty('useBridgeEvent');
-    expect(typeof useBridgeEventModule.useBridgeEvent).toBe('function');
-  });
-
-  test('listener filters by eventName - matching event triggers callback', () => {
+  test('eventName이 일치할 때 callback을 data와 함께 호출한다', () => {
     const callback = jest.fn();
+    act(() => {
+      create(React.createElement(Wrapper, { eventName: 'MY_EVENT', callback }));
+    });
 
-    // Simulate listener being registered
-    const testListener = (eventName: string, handler: Function) => {
-      if (eventName === 'BridgeEvent') {
-        // Test the callback with matching event
-        handler({ name: 'MY_EVENT', data: { value: 42 } });
-      }
-      return { remove: jest.fn() };
-    };
+    act(() => {
+      capturedListener!({ name: 'MY_EVENT', data: { key: 'value' } });
+    });
 
-    // Create a test listener function similar to what the hook creates
-    const testHandler = (event: { name: string; data: any }) => {
-      if (event.name === 'MY_EVENT') {
-        callback(event.data);
-      }
-    };
-
-    testListener('BridgeEvent', testHandler);
-
-    expect(callback).toHaveBeenCalledWith({ value: 42 });
+    expect(callback).toHaveBeenCalledWith({ key: 'value' });
   });
 
-  test('listener does not trigger callback for non-matching eventName', () => {
+  test('eventName이 다르면 callback을 호출하지 않는다', () => {
     const callback = jest.fn();
+    act(() => {
+      create(React.createElement(Wrapper, { eventName: 'MY_EVENT', callback }));
+    });
 
-    // Simulate listener being registered
-    const testListener = (eventName: string, handler: Function) => {
-      if (eventName === 'BridgeEvent') {
-        // Test the callback with non-matching event
-        handler({ name: 'OTHER_EVENT', data: { value: 42 } });
-      }
-      return { remove: jest.fn() };
-    };
-
-    // Create a test listener function similar to what the hook creates
-    const testHandler = (event: { name: string; data: any }) => {
-      if (event.name === 'MY_EVENT') {
-        callback(event.data);
-      }
-    };
-
-    testListener('BridgeEvent', testHandler);
+    act(() => {
+      capturedListener!({ name: 'OTHER_EVENT', data: {} });
+    });
 
     expect(callback).not.toHaveBeenCalled();
   });
 
-  test('emitter is listening for BridgeEvent', () => {
-    // After module load, check that addListener was called with BridgeEvent
-    const recentCalls = mockAddListener.mock.calls.filter(
-      (call) => call[0] === 'BridgeEvent'
-    );
-    expect(recentCalls.length).toBeGreaterThanOrEqual(0);
+  test('unmount 시 subscription을 해제하고 removeListeners를 호출한다', () => {
+    let renderer: ReturnType<typeof create>;
+    act(() => {
+      renderer = create(React.createElement(Wrapper, { eventName: 'MY_EVENT', callback: jest.fn() }));
+    });
+
+    act(() => {
+      renderer.unmount();
+    });
+
+    expect(mockSubscriptionRemove).toHaveBeenCalled();
+    expect(mockRemoveListeners).toHaveBeenCalledWith(1);
   });
 });
