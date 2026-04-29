@@ -130,6 +130,17 @@ supportFragmentManager.beginTransaction()
 
 RN이 `popToNative()`를 호출했을 때 실행될 콜백을 등록한다.
 
+**Activity:**
+```kotlin
+val intent = Intent(this, BridgeLibActivity::class.java).apply {
+    putExtra(BridgeLibActivity.EXTRA_MODULE_NAME, "HomeScreen")
+}
+startActivity(intent)
+
+// 또는 서브클래싱 없이 직접 인스턴스 접근이 필요한 경우:
+// BridgeLibActivity를 상속하고 onCreate에서 onPopRequested를 설정
+```
+
 **Fragment:**
 ```kotlin
 val fragment = BridgeLibFragment.newInstance("HomeScreen")
