@@ -1,8 +1,8 @@
 import NativeBridgeModule from './specs/NativeBridgeModule';
 
-export function sendToNative(
+export function sendToNative<T extends Record<string, unknown> = Record<string, unknown>>(
   name: string,
-  data: Record<string, unknown> = {},
+  data: T = {} as T,
 ): void {
   NativeBridgeModule.sendEvent(name, data);
 }

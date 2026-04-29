@@ -4,9 +4,9 @@ import NativeBridgeModule from './specs/NativeBridgeModule';
 
 const emitter = new NativeEventEmitter(NativeModules.NativeBridgeModule);
 
-export function useBridgeEvent(
+export function useBridgeEvent<T extends Record<string, unknown> = Record<string, unknown>>(
   eventName: string,
-  callback: (data: Record<string, unknown>) => void
+  callback: (data: T) => void
 ): void {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
@@ -16,7 +16,7 @@ export function useBridgeEvent(
 
     const subscription = emitter.addListener(
       'BridgeEvent',
-      (event: { name: string; data: Record<string, unknown> }) => {
+      (event: { name: string; data: T }) => {
         if (event.name === eventName) {
           callbackRef.current(event.data);
         }

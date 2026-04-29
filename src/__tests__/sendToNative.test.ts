@@ -21,4 +21,15 @@ describe('sendToNative', () => {
     sendToNative('TEST_EVENT');
     expect(NativeBridgeModule.sendEvent).toHaveBeenCalledWith('TEST_EVENT', {});
   });
+
+  test('typed payload로 sendEvent를 호출한다', () => {
+    type Payload = { userId: string; count: number };
+    sendToNative<Payload>('LOGIN', { userId: 'abc', count: 1 });
+    expect(NativeBridgeModule.sendEvent).toHaveBeenCalledWith('LOGIN', { userId: 'abc', count: 1 });
+  });
+
+  test('제네릭 미지정 시 기존 방식과 동일하게 동작한다', () => {
+    sendToNative('FALLBACK', { x: 1 });
+    expect(NativeBridgeModule.sendEvent).toHaveBeenCalledWith('FALLBACK', { x: 1 });
+  });
 });
