@@ -271,3 +271,36 @@ Could not resolve all files for configuration ':mobile:prdDebugRuntimeClasspath'
 **원인:** AAR은 `react-android` / `hermes-android` 의존성을 내부에 포함하지 않는다. 소비앱 Gradle이 React Native Maven 저장소를 알지 못하면 의존성을 해석하지 못한다.
 
 **해결:** `settings.gradle`에 React Native 저장소를 추가하고, `build.gradle`에 의존성을 명시한다 (위 섹션 2 — 방법 B 참고).
+
+### NoClassDefFoundError: OpenSourceMergedSoMapping
+
+```
+java.lang.NoClassDefFoundError: Failed resolution of: Lcom/facebook/react/soloader/OpenSourceMergedSoMapping;
+    at com.bridgelib.BridgeLibHost.init(BridgeLibHost.kt:29)
+```
+
+**원인:** `OpenSourceMergedSoMapping`은 `react-android 0.73+`에서 추가된 클래스다. 소비앱의 다른 의존성이 더 낮은 버전의 `react-android`를 transitively 끌어들이면 Gradle 충돌 해소 과정에서 낮은 버전이 선택되어 런타임에 클래스를 찾지 못한다.
+
+**해결:** 소비앱 `build.gradle`에서 버전을 강제 지정한다.
+
+**Groovy (build.gradle)**
+```groovy
+configurations.all {
+    resolutionStrategy {
+        force 'com.facebook.react:react-android:0.84.1'
+        force 'com.facebook.react:hermes-android:0.84.1'
+    }
+}
+```
+
+**Kotlin DSL (build.gradle.kts)**
+```kotlin
+configurations.all {
+    resolutionStrategy {
+        force("com.facebook.react:react-android:0.84.1")
+        force("com.facebook.react:hermes-android:0.84.1")
+    }
+}
+```
+
+> 버전 `0.84.1`은 hongfield 라이브러리가 빌드된 RN 버전이다. 버전 불일치 시 다른 런타임 오류가 발생할 수 있으므로 정확히 맞춰야 한다.
