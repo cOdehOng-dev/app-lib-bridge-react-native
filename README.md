@@ -123,3 +123,71 @@ npm run build
 ```bash
 npm publish
 ```
+
+---
+
+## CLI
+
+패키지를 설치하면 `hongfield` CLI가 자동으로 등록됩니다.
+
+### Android AAR 빌드
+
+JS 번들 빌드 → AAR 빌드 순서로 자동 실행됩니다.
+
+```bash
+npx hongfield package:android
+```
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--variant` | 빌드 variant | `Release` |
+| `--module-name` | 출력 파일명 | `bridge-lib` |
+
+```bash
+# Debug 빌드
+npx hongfield package:android --variant Debug
+
+# 출력 파일명 변경
+npx hongfield package:android --module-name my-lib
+```
+
+결과물: `output/android/bridge-lib-release.aar`
+
+---
+
+### Android 로컬 Maven 배포
+
+```bash
+npx hongfield publish:android
+```
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--module-name` | 모듈 이름 | `bridge-lib` |
+| `--repo` | Maven 저장소 경로 | `~/.m2/repository` |
+
+---
+
+### iOS XCFramework 빌드
+
+JS 번들 빌드 → XCFramework 빌드 순서로 자동 실행됩니다.
+
+```bash
+npx hongfield package:ios
+```
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--scheme` | Xcode 스킴 이름 | `BridgeLib` |
+| `--configuration` | 빌드 구성 | `Release` |
+| `--output` | 출력 디렉터리 경로 | `output/ios` |
+
+```bash
+# 커스텀 스킴
+npx hongfield package:ios --scheme MyScheme
+
+# 출력 경로 지정
+npx hongfield package:ios --output ./build/ios
+```
+
+결과물: `output/ios/BridgeLib.xcframework`
