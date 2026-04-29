@@ -3,3 +3,4 @@
 
 RCT_EXTERN_MODULE(NativeBridgeModule, RCTEventEmitter)
 RCT_EXTERN_METHOD(sendEvent:(NSString *)name data:(NSDictionary *)data)
+RCT_EXTERN_METHOD(popToNative)

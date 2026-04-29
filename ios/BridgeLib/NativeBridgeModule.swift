@@ -27,7 +27,10 @@ class NativeBridgeModule: RCTEventEmitter {
         )
     }
 
-    // Internal: called only by BridgeEventEmitter.shared within this module
+    @objc func popToNative() {
+        BridgeEventEmitter.shared.handlePopToNative()
+    }
+
     func emitToJS(eventName: String, data: [String: Any]) {
         sendEvent(withName: "BridgeEvent", body: ["name": eventName, "data": data])
     }
