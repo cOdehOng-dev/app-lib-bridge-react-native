@@ -36,6 +36,10 @@ import Foundation
     }
 
     internal func handlePopToNative() {
-        queue.async { self.popToNativeCallback?() }
+        // Read callback on concurrent queue, then invoke on main thread (UIKit navigation 보장).
+        queue.async {
+            let cb = self.popToNativeCallback
+            DispatchQueue.main.async { cb?() }
+        }
     }
 }
