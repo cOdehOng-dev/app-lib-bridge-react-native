@@ -1,8 +1,12 @@
 module.exports = {
   dependency: {
     platforms: {
-      android: null,
-      ios: null,
+      android: {
+        sourceDir: './android/bridge-lib',
+      },
+      ios: {
+        sourceDir: './ios',
+      },
     },
   },
 };
