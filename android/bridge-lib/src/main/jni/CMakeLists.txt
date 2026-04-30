@@ -31,3 +31,7 @@ target_link_libraries(appmodules
   ReactAndroid::jsi
   fbjni::fbjni
 )
+
+# Android 15+ devices may use 16 KB memory page sizes (arm64).
+# Align the SO to 16 KB so it loads correctly without extractNativeLibs="true".
+target_link_options(appmodules PRIVATE -Wl,-z,max-page-size=16384)

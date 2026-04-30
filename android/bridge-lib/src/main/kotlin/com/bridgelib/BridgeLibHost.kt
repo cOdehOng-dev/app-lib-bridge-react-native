@@ -6,6 +6,7 @@ import com.facebook.react.ReactHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactHost
+import com.facebook.react.shell.MainReactPackage
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 
@@ -42,7 +43,7 @@ object BridgeLibHost {
 
             reactHost = DefaultReactHost.getDefaultReactHost(
                 context = application,
-                packageList = packages + listOf(BridgeLibPackage()),
+                packageList = listOf(MainReactPackage()) + packages + listOf(BridgeLibPackage()),
                 jsMainModulePath = jsMainModulePath,
                 jsBundleAssetPath = bundleConfig.assetPath,
                 jsBundleFilePath = bundleConfig.localBundlePath,
