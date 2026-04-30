@@ -103,13 +103,11 @@ include ':app'
 
 // AAR publish 전용 — autolinking의 :codehong-dev_hongfield와 이름이 달라 충돌 없음
 include ':bridgelib'
-project(':bridgelib').projectDir = new File(rootProject.projectDir, '../../app-lib-bridge-react-native/android/bridge-lib')
+project(':bridgelib').projectDir = new File(rootProject.projectDir, '../node_modules/@codehong-dev/hongfield/android/bridge-lib')
 
 includeBuild('../node_modules/@react-native/gradle-plugin')
 ```
 
-> `../../app-lib-bridge-react-native`는 라이브러리 소스 경로 기준이다. 프로젝트 위치에 맞게 조정한다.
->
 > `:bridgelib`는 publish 태스크 전용이며 `:app`의 `dependencies`에 추가하지 않는다. `:app`은 autolinking이 생성한 `:codehong-dev_hongfield`를 사용한다.
 
 ## 3. AndroidManifest.xml 설정
