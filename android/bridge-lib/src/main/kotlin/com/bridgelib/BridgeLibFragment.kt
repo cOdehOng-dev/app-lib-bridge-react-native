@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.ViewCompat
+import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
@@ -49,7 +51,24 @@ class BridgeLibFragment : Fragment() {
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() }
 
-        return checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
+        val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
+
+        // 호스트 Activity가 inset을 소비했더라도 Window 루트에서 직접 읽어 SafeAreaProvider로 전달
+        surfaceView.doOnAttach { view ->
+            ViewCompat.getRootWindowInsets(view)?.let { insets ->
+                ViewCompat.dispatchApplyWindowInsets(view, insets)
+            }
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(surfaceView) { v, insets ->
+            if (v is ViewGroup) {
+                for (i in 0 until v.childCount) {
+                    ViewCompat.dispatchApplyWindowInsets(v.getChildAt(i), insets)
+                }
+            }
+            insets
+        }
+
+        return surfaceView
     }
 
     override fun onResume() {
