@@ -67,23 +67,38 @@ function publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath) {
     if (!fs.existsSync(pkgJsonPath)) continue;
 
     const pkgVersion = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).version;
-    // Gradle 복합 빌드(includeBuild) 태스크는 콜론 없이 '빌드이름:태스크' 형식
-    const gradleTask = `${pkgName}:assembleRelease`;
 
-    console.log(`\n[bridge-lib] autolinking 패키지 빌드: ${pkgName}@${pkgVersion}`);
-    try {
-      execSync(`${gradlew} ${gradleTask}`, { cwd: androidDir, stdio: 'inherit' });
-    } catch (err) {
-      console.warn(`[bridge-lib] ⚠ ${pkgName} 빌드 실패, 건너뜀: ${err.message}`);
-      continue;
-    }
-
-    // 빌드된 AAR 위치: <sourceDir>/build/outputs/aar/<dirName>-release.aar
-    const dirName = path.basename(sourceDir);
-    const aarPath = path.join(sourceDir, 'build', 'outputs', 'aar', `${dirName}-release.aar`);
+    // 빌드된 AAR 위치: <sourceDir>/build/outputs/aar/<pkgName>-release.aar
+    // settings.gradle 없는 패키지는 Gradle 복합 빌드명이 소스 디렉터리명('android')으로 결정되어
+    // 태스크 이름이 맞지 않으므로, 메인 빌드 후 이미 생성된 AAR을 우선 사용한다.
+    const aarDir = path.join(sourceDir, 'build', 'outputs', 'aar');
+    let aarPath = path.join(aarDir, `${pkgName}-release.aar`);
     if (!fs.existsSync(aarPath)) {
-      console.warn(`[bridge-lib] ⚠ AAR 없음: ${aarPath}, 건너뜀`);
-      continue;
+      // 폴백: 디렉터리에서 *-release.aar 검색
+      const releaseAars = fs.existsSync(aarDir)
+        ? fs.readdirSync(aarDir).filter(f => f.endsWith('-release.aar'))
+        : [];
+      if (releaseAars.length > 0) {
+        aarPath = path.join(aarDir, releaseAars[0]);
+      } else {
+        // AAR이 없으면 assembleRelease 태스크로 직접 빌드 시도
+        console.log(`\n[bridge-lib] autolinking 패키지 빌드: ${pkgName}@${pkgVersion}`);
+        try {
+          execSync(`${gradlew} :${path.basename(sourceDir)}:assembleRelease`, { cwd: androidDir, stdio: 'inherit' });
+        } catch (err) {
+          console.warn(`[bridge-lib] ⚠ ${pkgName} 빌드 실패, 건너뜀: ${err.message}`);
+          continue;
+        }
+        // 빌드 후 재검색
+        const built = fs.existsSync(aarDir)
+          ? fs.readdirSync(aarDir).filter(f => f.endsWith('-release.aar'))
+          : [];
+        if (built.length === 0) {
+          console.warn(`[bridge-lib] ⚠ AAR 없음: ${aarDir}, 건너뜀`);
+          continue;
+        }
+        aarPath = path.join(aarDir, built[0]);
+      }
     }
 
     // 로컬 Maven에 설치: ~/.m2/repository/com/npm/rn/<pkgName>/<version>/

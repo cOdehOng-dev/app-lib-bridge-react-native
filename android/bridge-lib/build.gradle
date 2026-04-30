@@ -98,8 +98,13 @@ publishing {
                             .each { dep ->
                                 def pkgVersion = getNodeModulesVersion(dep.artifactId.text())
                                 if (pkgVersion) {
-                                    dep.groupId.value = 'com.npm.rn'
-                                    dep.version.value = pkgVersion
+                                    // dep.groupId / dep.version return NodeList; use [0] to get the Node and set its text value.
+                                    dep.groupId[0].value = 'com.npm.rn'
+                                    if (dep.version.size() > 0) {
+                                        dep.version[0].value = pkgVersion
+                                    } else {
+                                        dep.appendNode('version', pkgVersion)
+                                    }
                                 } else {
                                     dependenciesNode.remove(dep)
                                 }
