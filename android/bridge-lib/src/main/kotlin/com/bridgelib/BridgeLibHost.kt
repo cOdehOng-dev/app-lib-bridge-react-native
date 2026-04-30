@@ -29,6 +29,11 @@ object BridgeLibHost {
 
             SoLoader.init(application, OpenSourceMergedSoMapping)
 
+            // javaModuleProvider C++ 함수 포인터를 설정하는 SO.
+            // 이 포인터가 null이면 DeviceInfo 등 코어 Java TurboModule이 모두 실패한다.
+            // 호스트 앱이 이미 로드했다면 no-op이므로 안전하게 항상 호출한다.
+            SoLoader.loadLibrary("appmodules")
+
             // ReactNativeFeatureFlags를 초기화하고 react_newarchdefaults SO를 로드한다.
             // 소비 앱이 이미 호출했을 경우(fabricEnabled == true)는 skip.
             if (!DefaultNewArchitectureEntryPoint.fabricEnabled) {

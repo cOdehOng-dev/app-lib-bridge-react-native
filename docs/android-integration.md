@@ -341,6 +341,6 @@ TurboModuleRegistry.getEnforcing(...):
 
 **원인:** New Architecture(Bridgeless)에서 `DeviceInfo` 등 코어 Java TurboModule은 `javaModuleProvider` C++ 함수 포인터를 통해 조회된다. 이 포인터는 `libappmodules.so`의 `JNI_OnLoad`에서 설정된다. `libappmodules.so`가 없으면 포인터가 null로 남아 모든 코어 Java TurboModule 조회가 실패한다.
 
-**해결:** `1.0.5` 이상으로 업그레이드한다. 1.0.5부터 AAR에 `libappmodules.so`가 포함되어 자동으로 해소된다.
+**해결:** 최신 버전으로 업그레이드한다. AAR에 `libappmodules.so`가 포함되어 있고 `BridgeLibHost.init()`에서 자동으로 로드한다.
 
 업그레이드가 불가능한 경우, 소비앱에서 직접 `appmodules` SO를 빌드해야 한다. `app/build.gradle`에 `com.facebook.react` 플러그인을 application 모드로 적용하고 `autolinkLibrariesWithApp()`을 추가한다(RN 브라운필드 통합 가이드 참고).
