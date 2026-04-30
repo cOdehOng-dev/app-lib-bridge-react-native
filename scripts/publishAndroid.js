@@ -4,9 +4,13 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 
 // @codehong-dev/hongfield → Gradle 프로젝트명: codehong-dev_hongfield
 const GRADLE_MODULE = 'codehong-dev_hongfield';
+
+// autolinking 패키지를 Maven에 배포할 때 사용할 groupId
+const AUTOLINKING_GROUP_ID = 'com.npm.rn';
 
 function findRootDir() {
   let dir = process.cwd();
@@ -35,6 +39,95 @@ function buildJsBundle(rootDir, assetsDir) {
   console.log('[bridge-lib] ✓ JS 번들 완료');
 }
 
+/**
+ * autolinking.json을 읽어 각 패키지를 빌드하고 로컬 Maven에 배포한다.
+ * 순수 네이티브 소비앱이 PackageList 없이도 패키지 클래스를 사용할 수 있도록
+ * AAR을 ~/.m2/repository에 설치한다.
+ */
+function publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath) {
+  const autolinkingJsonPath = path.join(
+    androidDir, 'build', 'generated', 'autolinking', 'autolinking.json'
+  );
+  if (!fs.existsSync(autolinkingJsonPath)) {
+    console.log('[bridge-lib] autolinking.json 없음, autolinking 패키지 배포 건너뜀');
+    return [];
+  }
+
+  const autolinkingConfig = JSON.parse(fs.readFileSync(autolinkingJsonPath, 'utf8'));
+  const dependencies = autolinkingConfig.dependencies || {};
+  const published = [];
+
+  for (const [pkgName, pkgInfo] of Object.entries(dependencies)) {
+    const android = pkgInfo.platforms && pkgInfo.platforms.android;
+    if (!android || !android.sourceDir) continue;
+    if (pkgName === '@codehong-dev/hongfield') continue;
+
+    const sourceDir = android.sourceDir;
+    const pkgJsonPath = path.join(rootDir, 'node_modules', pkgName, 'package.json');
+    if (!fs.existsSync(pkgJsonPath)) continue;
+
+    const pkgVersion = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).version;
+    // Gradle 복합 빌드(includeBuild) 태스크는 콜론 없이 '빌드이름:태스크' 형식
+    const gradleTask = `${pkgName}:assembleRelease`;
+
+    console.log(`\n[bridge-lib] autolinking 패키지 빌드: ${pkgName}@${pkgVersion}`);
+    try {
+      execSync(`${gradlew} ${gradleTask}`, { cwd: androidDir, stdio: 'inherit' });
+    } catch (err) {
+      console.warn(`[bridge-lib] ⚠ ${pkgName} 빌드 실패, 건너뜀: ${err.message}`);
+      continue;
+    }
+
+    // 빌드된 AAR 위치: <sourceDir>/build/outputs/aar/<dirName>-release.aar
+    const dirName = path.basename(sourceDir);
+    const aarPath = path.join(sourceDir, 'build', 'outputs', 'aar', `${dirName}-release.aar`);
+    if (!fs.existsSync(aarPath)) {
+      console.warn(`[bridge-lib] ⚠ AAR 없음: ${aarPath}, 건너뜀`);
+      continue;
+    }
+
+    // 로컬 Maven에 설치: ~/.m2/repository/com/npm/rn/<pkgName>/<version>/
+    const artifactId = pkgName;
+    installToLocalMaven(aarPath, AUTOLINKING_GROUP_ID, artifactId, pkgVersion, repoPath);
+    published.push({ groupId: AUTOLINKING_GROUP_ID, artifactId, version: pkgVersion });
+    console.log(`[bridge-lib] ✓ ${pkgName}@${pkgVersion} → ${repoPath}`);
+  }
+
+  return published;
+}
+
+function installToLocalMaven(aarPath, groupId, artifactId, version, repoPath) {
+  const groupPath = groupId.replace(/\./g, path.sep);
+  const targetDir = path.join(repoPath, groupPath, artifactId, version);
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  const baseName = `${artifactId}-${version}`;
+  const destAar = path.join(targetDir, `${baseName}.aar`);
+  const destPom = path.join(targetDir, `${baseName}.pom`);
+
+  fs.copyFileSync(aarPath, destAar);
+
+  const pom = `<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>${groupId}</groupId>
+  <artifactId>${artifactId}</artifactId>
+  <version>${version}</version>
+  <packaging>aar</packaging>
+</project>`;
+  fs.writeFileSync(destPom, pom);
+
+  // md5 / sha1 (Gradle 캐시 무효화 방지)
+  const aarBuf = fs.readFileSync(destAar);
+  fs.writeFileSync(`${destAar}.md5`, crypto.createHash('md5').update(aarBuf).digest('hex'));
+  fs.writeFileSync(`${destAar}.sha1`, crypto.createHash('sha1').update(aarBuf).digest('hex'));
+  const pomBuf = Buffer.from(pom, 'utf8');
+  fs.writeFileSync(`${destPom}.md5`, crypto.createHash('md5').update(pomBuf).digest('hex'));
+  fs.writeFileSync(`${destPom}.sha1`, crypto.createHash('sha1').update(pomBuf).digest('hex'));
+}
+
 function publishAndroid({ version, repo } = {}) {
   const rootDir = findRootDir();
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
@@ -56,7 +149,7 @@ function publishAndroid({ version, repo } = {}) {
   // 1) JS 번들 빌드 → bridge-lib assets에 포함시켜 AAR에 패키징
   buildJsBundle(rootDir, assetsDir);
 
-  // 2) AAR 빌드 및 Maven 배포
+  // 2) 메인 AAR 빌드 및 Maven 배포
   //    externalNativeBuild가 bridge-lib/src/main/jni/CMakeLists.txt를 사용해
   //    libappmodules.so를 빌드하고 AAR에 자동으로 패키징한다.
   //    libappmodules.so는 javaModuleProvider를 설정해 DeviceInfo 등 코어 TurboModule을 활성화한다.
@@ -70,7 +163,26 @@ function publishAndroid({ version, repo } = {}) {
     process.exit(1);
   }
 
-  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/hong/lib/hongfield/${version}/\n`);
+  console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/hong/lib/hongfield/${version}/`);
+
+  // 3) autolinking 패키지 빌드 및 Maven 배포
+  //    순수 네이티브 소비앱이 PackageList 없이도 패키지 클래스를 classpath에서 찾을 수 있도록
+  //    각 패키지의 AAR을 로컬 Maven에 설치한다.
+  console.log('\n[bridge-lib] autolinking 패키지 Maven 배포 시작...');
+  const published = publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath);
+
+  if (published.length > 0) {
+    console.log('\n========================================');
+    console.log(' 순수 네이티브 앱 build.gradle.kts 의존성');
+    console.log('========================================');
+    console.log('아래 의존성을 소비앱 build.gradle.kts에 추가하세요:\n');
+    published.forEach(({ groupId, artifactId, version: v }) => {
+      console.log(`  implementation("${groupId}:${artifactId}:${v}")`);
+    });
+    console.log('');
+  }
+
+  console.log('[bridge-lib] ✓ 전체 배포 완료\n');
 }
 
 module.exports = publishAndroid;

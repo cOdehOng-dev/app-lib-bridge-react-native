@@ -63,12 +63,32 @@ object BridgeLibHost {
 
     @Suppress("UNCHECKED_CAST")
     private fun resolveAutolinkedPackages(application: Application): List<ReactPackage> {
-        return try {
+        // 1순위: autolinking RN 프로젝트 — PackageList 리플렉션
+        try {
             val clazz = Class.forName("com.facebook.react.PackageList")
             val instance = clazz.getConstructor(Application::class.java).newInstance(application)
-            clazz.getMethod("getPackages").invoke(instance) as List<ReactPackage>
-        } catch (_: Exception) {
-            emptyList()
+            val packages = clazz.getMethod("getPackages").invoke(instance) as List<ReactPackage>
+            if (packages.isNotEmpty()) return packages
+        } catch (_: Exception) { }
+
+        // 2순위: 순수 네이티브 앱 — 클래스명으로 직접 인스턴스화
+        // publish:android 실행 시 각 패키지가 com.npm.rn:<pkg>:<ver> 로 로컬 Maven에 배포된다.
+        // 소비앱 build.gradle.kts에 해당 의존성이 추가되면 classpath에서 찾아 자동 등록된다.
+        return KNOWN_RN_PACKAGE_CLASSES.mapNotNull { className ->
+            try {
+                Class.forName(className).getConstructor().newInstance() as ReactPackage
+            } catch (_: Exception) {
+                null
+            }
         }
     }
+
+    // publish:android 로 배포된 autolinking 패키지의 클래스명 목록.
+    // 소비앱 classpath에 존재하는 것만 자동 등록되고 없으면 조용히 스킵된다.
+    private val KNOWN_RN_PACKAGE_CLASSES = listOf(
+        "com.th3rdwave.safeareacontext.SafeAreaContextPackage",
+        "com.swmansion.gesturehandler.RNGestureHandlerPackage",
+        "com.swmansion.rnscreens.RNScreensPackage",
+        "com.oblador.vectoricons.VectorIconsPackage",
+    )
 }

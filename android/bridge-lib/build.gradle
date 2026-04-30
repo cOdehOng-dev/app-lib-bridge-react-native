@@ -91,10 +91,19 @@ publishing {
                     if (dependenciesNode) {
                         dependenciesNode.children()
                             // Autolinked native modules are added as project dependencies (implementation project(':xxx'))
-                            // and get rootProject.name as their Maven groupId when published. Remove them from the POM
-                            // so consumers don't try to resolve internal project references as external artifacts.
+                            // and get rootProject.name as their Maven groupId when published.
+                            // node_modules 에 버전 정보가 있으면 com.npm.rn:<pkg>:<ver> 로 교체하고,
+                            // 없으면 제거한다 (내부 프로젝트 참조는 외부 Maven에서 해소 불가).
                             .findAll { it.groupId.text() == rootProject.name }
-                            .each { dependenciesNode.remove(it) }
+                            .each { dep ->
+                                def pkgVersion = getNodeModulesVersion(dep.artifactId.text())
+                                if (pkgVersion) {
+                                    dep.groupId.value = 'com.npm.rn'
+                                    dep.version.value = pkgVersion
+                                } else {
+                                    dependenciesNode.remove(dep)
+                                }
+                            }
                     }
                 }
             }
@@ -108,13 +117,35 @@ publishing {
     }
 }
 
+// node_modules/<pkgName>/package.json 에서 version 을 읽는다.
+// consumer 프로젝트(node_modules 존재) 외부에서 빌드하면 null 을 반환한다.
+def getNodeModulesVersion(String pkgName) {
+    try {
+        def pkgJson = file("${rootProject.projectDir}/../node_modules/${pkgName}/package.json")
+        if (!pkgJson.exists()) return null
+        return new groovy.json.JsonSlurper().parse(pkgJson).version
+    } catch (Exception ignored) {
+        return null
+    }
+}
+
 tasks.register("removeDependenciesFromModuleFile") {
     doLast {
         def moduleFile = file("${layout.buildDirectory.get()}/publications/mavenAar/module.json")
         if (moduleFile.exists()) {
             def json = new groovy.json.JsonSlurper().parse(moduleFile)
             json.variants?.each { variant ->
-                // Same logic as POM cleanup: remove autolinked native module project references.
+                variant.dependencies?.each { dep ->
+                    if (dep.group == rootProject.name) {
+                        // .module 파일에서도 POM 과 동일하게 com.npm.rn 으로 교체한다.
+                        def pkgVersion = getNodeModulesVersion(dep.module as String)
+                        if (pkgVersion) {
+                            dep.group = 'com.npm.rn'
+                            dep.version = [requires: pkgVersion]
+                        }
+                    }
+                }
+                // 버전을 확정하지 못한 내부 프로젝트 참조는 제거
                 variant.dependencies?.removeAll { it.group == rootProject.name }
             }
             moduleFile.text = groovy.json.JsonOutput.prettyPrint(
