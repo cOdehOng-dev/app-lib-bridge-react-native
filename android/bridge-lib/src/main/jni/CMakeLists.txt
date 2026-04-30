@@ -6,6 +6,9 @@ find_package(fbjni REQUIRED CONFIG)
 
 add_library(appmodules SHARED OnLoad.cpp)
 
+# RN 0.76+ headers use C++20 concepts (requires keyword).
+set_target_properties(appmodules PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+
 # folly/folly-config.h is a generated file not shipped in prefab headers.
 # These flags replicate what react-native's folly-flags.cmake provides so
 # folly headers skip the missing generated config and use compile-time defaults.

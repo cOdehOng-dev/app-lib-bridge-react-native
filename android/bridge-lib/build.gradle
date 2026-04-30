@@ -50,6 +50,12 @@ android {
         }
     }
 
+    packagingOptions {
+        // libc++_shared.so is already provided by react-android; exclude from our AAR
+        // to prevent DuplicateRelativeFileException in consumer apps.
+        exclude 'lib/*/libc++_shared.so'
+    }
+
     publishing {
         multipleVariants {
             includeBuildTypeValues("debug", "release")
