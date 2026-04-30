@@ -82,10 +82,14 @@ function publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath) {
       if (releaseAars.length > 0) {
         aarPath = path.join(aarDir, releaseAars[0]);
       } else {
-        // AAR이 없으면 assembleRelease 태스크로 직접 빌드 시도
+        // AAR이 없으면 assembleRelease 태스크로 직접 빌드 시도.
+        // autolinking.json의 projectName 필드를 우선 사용하고,
+        // 없으면 npm 패키지명을 Gradle 프로젝트명으로 사용한다.
+        // (path.basename(sourceDir)은 항상 'android'가 되므로 사용하지 않는다.)
+        const gradleProject = android.projectName || pkgName;
         console.log(`\n[bridge-lib] autolinking 패키지 빌드: ${pkgName}@${pkgVersion}`);
         try {
-          execSync(`${gradlew} :${path.basename(sourceDir)}:assembleRelease`, { cwd: androidDir, stdio: 'inherit' });
+          execSync(`${gradlew} :${gradleProject}:assembleRelease`, { cwd: androidDir, stdio: 'inherit' });
         } catch (err) {
           console.warn(`[bridge-lib] ⚠ ${pkgName} 빌드 실패, 건너뜀: ${err.message}`);
           continue;
