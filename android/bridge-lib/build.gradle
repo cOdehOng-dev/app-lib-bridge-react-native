@@ -51,9 +51,15 @@ android {
     }
 
     packagingOptions {
-        // libc++_shared.so is already provided by react-android; exclude from our AAR
-        // to prevent DuplicateRelativeFileException in consumer apps.
+        // These SOs are all provided by react-android (api dependency) and will be
+        // present in the consumer app's APK. Bundling them in our AAR causes
+        // DuplicateRelativeFileException and, worse, symbol-resolution split-brain
+        // where javaModuleProvider is set in a different libreactnative.so instance
+        // than the one the rest of RN uses.
         exclude 'lib/*/libc++_shared.so'
+        exclude 'lib/*/libreactnative.so'
+        exclude 'lib/*/libjsi.so'
+        exclude 'lib/*/libfbjni.so'
     }
 
     publishing {
