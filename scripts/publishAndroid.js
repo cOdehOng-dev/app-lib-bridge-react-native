@@ -150,9 +150,16 @@ function publishAndroid({ version, repo } = {}) {
   const repoPath = repo || path.join(os.homedir(), '.m2', 'repository');
 
   if (!version) {
-    console.error('[bridge-lib] 오류: --version 옵션이 필요합니다.');
-    console.error('[bridge-lib] 예시: npx hongfield publish:android --version 1.0.0');
-    process.exit(1);
+    // --version 미지정 시 설치된 @codehong-dev/hongfield 버전을 사용한다.
+    try {
+      const pkgJson = path.join(rootDir, 'node_modules', '@codehong-dev', 'hongfield', 'package.json');
+      version = JSON.parse(fs.readFileSync(pkgJson, 'utf8')).version;
+      console.log(`[bridge-lib] --version 미지정: ${version} (node_modules/@codehong-dev/hongfield) 사용`);
+    } catch (_) {
+      console.error('[bridge-lib] 오류: --version 옵션이 필요합니다 (또는 node_modules/@codehong-dev/hongfield/package.json 누락).');
+      console.error('[bridge-lib] 예시: npx hongfield publish:android --version 1.0.0');
+      process.exit(1);
+    }
   }
 
   console.log(`\n[bridge-lib] Maven 배포 시작 → ${repoPath} (version: ${version})`);
