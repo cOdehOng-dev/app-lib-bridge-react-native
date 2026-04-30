@@ -16,10 +16,17 @@ android {
         buildConfigField("boolean", "IS_EDGE_TO_EDGE_ENABLED", properties["edgeToEdgeEnabled"] ?: "false").toString()
         buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", properties["newArchEnabled"] ?: "false").toString()
         buildConfigField("boolean", "IS_HERMES_ENABLED", properties["hermesEnabled"] ?: "true").toString()
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
     }
 
     buildFeatures {
         buildConfig = true
+        prefab true
     }
 
     buildTypes {
@@ -35,6 +42,12 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/jni/CMakeLists.txt"
+        }
     }
 
     publishing {
