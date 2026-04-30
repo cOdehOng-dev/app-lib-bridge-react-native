@@ -4,18 +4,12 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-function findRootDir() {
-  let dir = process.cwd();
-  while (dir !== path.parse(dir).root) {
-    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
-    dir = path.dirname(dir);
-  }
-  throw new Error('package.json을 찾을 수 없습니다.');
-}
+// __dirname → scripts/ → library root (works whether called from library itself or via node_modules)
+const LIBRARY_DIR = path.resolve(__dirname, '..');
 
-function buildJsBundle(rootDir) {
-  const assetsDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'assets');
-  const resDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
+function buildJsBundle(libraryDir) {
+  const assetsDir = path.join(libraryDir, 'android', 'app', 'src', 'main', 'assets');
+  const resDir = path.join(libraryDir, 'android', 'app', 'src', 'main', 'res');
   fs.mkdirSync(assetsDir, { recursive: true });
 
   console.log('[bridge-lib] JS 번들 빌드 중...');
@@ -28,19 +22,19 @@ function buildJsBundle(rootDir) {
       `--bundle-output ${path.join(assetsDir, 'index.android.bundle')}`,
       `--assets-dest ${resDir}`,
     ].join(' '),
-    { cwd: rootDir, stdio: 'inherit' }
+    { cwd: libraryDir, stdio: 'inherit' }
   );
   console.log('[bridge-lib] ✓ JS 번들 완료');
 }
 
 function packageAndroid({ variant = 'Release', moduleName = 'bridge-lib' } = {}) {
-  const rootDir = findRootDir();
+  const libraryDir = LIBRARY_DIR;
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-  const androidDir = path.join(rootDir, 'android');
+  const androidDir = path.join(libraryDir, 'android');
 
   console.log(`\n[bridge-lib] Android AAR 빌드 시작: ${moduleName} (${variant})`);
 
-  buildJsBundle(rootDir);
+  buildJsBundle(libraryDir);
 
   try {
     execSync(`${gradlew} :bridge-lib:assemble${variant}`, {
@@ -60,7 +54,8 @@ function packageAndroid({ variant = 'Release', moduleName = 'bridge-lib' } = {})
     'aar',
     `bridge-lib-${variant.toLowerCase()}.aar`
   );
-  const outputDir = path.join(rootDir, 'output', 'android');
+  // AAR은 호출 위치 기준 output/android/에 저장
+  const outputDir = path.join(process.cwd(), 'output', 'android');
   const aarDest = path.join(outputDir, `${moduleName}-${variant.toLowerCase()}.aar`);
 
   fs.mkdirSync(outputDir, { recursive: true });
