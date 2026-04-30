@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+const ABIS = ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'];
+
 function findRootDir() {
   let dir = process.cwd();
   while (dir !== path.parse(dir).root) {
@@ -14,7 +16,8 @@ function findRootDir() {
   throw new Error('package.json을 찾을 수 없습니다.');
 }
 
-function findBridgeLibAssetsDir(androidDir, moduleName) {
+// settings.gradle에서 ':moduleName' 프로젝트의 절대 경로를 반환
+function findBridgeLibDir(androidDir, moduleName) {
   const settingsGradle = path.join(androidDir, 'settings.gradle');
   if (!fs.existsSync(settingsGradle)) {
     throw new Error(`settings.gradle를 찾을 수 없습니다: ${settingsGradle}`);
@@ -34,9 +37,7 @@ function findBridgeLibAssetsDir(androidDir, moduleName) {
     );
   }
 
-  // rootProject.projectDir = androidDir이므로 상대경로를 androidDir 기준으로 resolve
-  const libDir = path.resolve(androidDir, match[1]);
-  return path.join(libDir, 'src', 'main', 'assets');
+  return path.resolve(androidDir, match[1]);
 }
 
 function buildJsBundle(rootDir, assetsDir) {
@@ -57,6 +58,70 @@ function buildJsBundle(rootDir, assetsDir) {
   console.log('[bridge-lib] ✓ JS 번들 완료');
 }
 
+// app/build 하위에서 libappmodules.so 파일을 ABI별로 탐색
+function findAppModulesSo(appBuildDir) {
+  const result = {};
+
+  function search(dir) {
+    if (!fs.existsSync(dir)) return;
+    let items;
+    try {
+      items = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (e) {
+      return;
+    }
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      if (item.isDirectory()) {
+        search(fullPath);
+      } else if (item.isFile() && item.name === 'libappmodules.so') {
+        // 경로에서 ABI 추출 (예: .../arm64-v8a/libappmodules.so)
+        const abi = path.basename(path.dirname(fullPath));
+        if (ABIS.includes(abi) && !result[abi]) {
+          result[abi] = fullPath;
+        }
+      }
+    }
+  }
+
+  search(appBuildDir);
+  return result;
+}
+
+function buildNativeLibs(gradlew, androidDir) {
+  console.log('\n[bridge-lib] Native 라이브러리 빌드 중 (:app:externalNativeBuildRelease)...');
+  try {
+    execSync(
+      `${gradlew} :app:externalNativeBuildRelease`,
+      { cwd: androidDir, stdio: 'inherit' }
+    );
+  } catch (err) {
+    console.error('[bridge-lib] Native 빌드 실패:', err.message);
+    process.exit(1);
+  }
+}
+
+function copyNativeLibsToJniLibs(androidDir, jniLibsDir) {
+  const appBuildDir = path.join(androidDir, 'app', 'build');
+  const soByAbi = findAppModulesSo(appBuildDir);
+  const foundAbis = Object.keys(soByAbi);
+
+  if (foundAbis.length === 0) {
+    console.error(
+      '[bridge-lib] 오류: libappmodules.so를 찾을 수 없습니다.\n' +
+      '  :app:externalNativeBuildRelease 결과를 확인하세요.'
+    );
+    process.exit(1);
+  }
+
+  for (const [abi, soFile] of Object.entries(soByAbi)) {
+    const destDir = path.join(jniLibsDir, abi);
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.copyFileSync(soFile, path.join(destDir, 'libappmodules.so'));
+    console.log(`[bridge-lib] ✓ ${abi}/libappmodules.so → jniLibs`);
+  }
+}
+
 function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
   const rootDir = findRootDir();
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
@@ -71,20 +136,32 @@ function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
 
   console.log(`\n[bridge-lib] Maven 배포 시작 → ${repoPath} (version: ${version})`);
 
-  // 1) JS 번들 빌드 → bridge-lib 라이브러리 assets에 포함시켜 AAR에 패키징
-  const bridgeLibAssetsDir = findBridgeLibAssetsDir(androidDir, moduleName);
-  buildJsBundle(rootDir, bridgeLibAssetsDir);
+  const bridgeLibDir = findBridgeLibDir(androidDir, moduleName);
+  const assetsDir = path.join(bridgeLibDir, 'src', 'main', 'assets');
+  const jniLibsDir = path.join(bridgeLibDir, 'src', 'main', 'jniLibs');
 
-  // 2) AAR + 번들 Maven 배포
+  // 1) JS 번들 빌드 → bridge-lib 라이브러리 assets에 포함시켜 AAR에 패키징
+  buildJsBundle(rootDir, assetsDir);
+
+  // 2) :app 모듈 Native 빌드 → libappmodules.so 생성
+  //    javaModuleProvider 함수 포인터를 설정하는 SO로, DeviceInfo 등 코어 TurboModule 조회에 필요
+  buildNativeLibs(gradlew, androidDir);
+  copyNativeLibsToJniLibs(androidDir, jniLibsDir);
+
+  // 3) AAR + 번들 + libappmodules.so Maven 배포
   try {
     execSync(
       `${gradlew} :${moduleName}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath} -PlibVersion=${version}`,
       { cwd: androidDir, stdio: 'inherit' }
     );
   } catch (err) {
+    fs.rmSync(jniLibsDir, { recursive: true, force: true });
     console.error('[bridge-lib] Maven 배포 실패:', err.message);
     process.exit(1);
   }
+
+  // 4) jniLibs 정리 (node_modules 임시 수정 복원)
+  fs.rmSync(jniLibsDir, { recursive: true, force: true });
 
   console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/hong/lib/hongfield/${version}/\n`);
 }
