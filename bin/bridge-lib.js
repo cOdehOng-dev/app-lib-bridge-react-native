@@ -4,6 +4,8 @@
 const { program } = require('commander');
 const packageAndroid = require('../scripts/packageAndroid');
 const publishAndroid = require('../scripts/publishAndroid');
+const bundleAndroid = require('../scripts/bundleAndroid');
+const bundleIos = require('../scripts/bundleIos');
 const packageIos = require('../scripts/packageIos');
 const publishIos = require('../scripts/publishIos');
 
@@ -29,6 +31,22 @@ program
   .option('--repo <path>', 'Maven 저장소 경로 (기본: ~/.m2/repository)')
   .action((options) => {
     publishAndroid({ moduleName: options.moduleName, version: options.version, repo: options.repo });
+  });
+
+program
+  .command('bundle:android')
+  .description('Android JS 번들만 생성 (AAR 빌드/배포 없음)')
+  .option('--entry-file <file>', '엔트리 파일 경로', 'index.js')
+  .action((options) => {
+    bundleAndroid({ entryFile: options.entryFile });
+  });
+
+program
+  .command('bundle:ios')
+  .description('iOS JS 번들만 생성 (XCFramework 빌드/배포 없음)')
+  .option('--entry-file <file>', '엔트리 파일 경로', 'index.js')
+  .action((options) => {
+    bundleIos({ entryFile: options.entryFile });
   });
 
 program

@@ -2,6 +2,10 @@ import UIKit
 import React
 import React_RCTFabric
 
+@objc public protocol RNEventListener: AnyObject {
+    func onEvent(eventName: String, data: [String: Any])
+}
+
 @objc public class BridgeLibViewController: UIViewController {
 
     private let moduleName: String
@@ -10,6 +14,9 @@ import React_RCTFabric
     /// RN 화면이 popToNative()를 호출할 때 실행될 클로저.
     /// nil이면 아무 동작도 하지 않는다.
     @objc public var onPopRequested: (() -> Void)?
+
+    /// RN에서 sendToNative로 발생하는 모든 이벤트를 수신하는 리스너.
+    @objc public weak var eventListener: RNEventListener?
 
     /// - Parameters:
     ///   - moduleName: AppRegistry.registerComponent()에 등록된 컴포넌트 이름
@@ -32,11 +39,15 @@ import React_RCTFabric
         BridgeEventEmitter.shared.setPopToNativeCallback { [weak self] in
             self?.onPopRequested?()
         }
+        BridgeEventEmitter.shared.setGlobalEventListener { [weak self] name, data in
+            self?.eventListener?.onEvent(eventName: name, data: data)
+        }
     }
 
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         BridgeEventEmitter.shared.setPopToNativeCallback(nil)
+        BridgeEventEmitter.shared.setGlobalEventListener(nil)
     }
 
     private func embedReactNativeView() {

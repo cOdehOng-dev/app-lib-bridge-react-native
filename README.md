@@ -85,6 +85,42 @@ useBridgeEvent('USER_LOGGED_IN', (data) => {
 
 ---
 
+### Native에서 RN 이벤트 수신 (`RNEventListener`)
+
+`sendToNative`로 전송된 이벤트는 각 플랫폼의 `RNEventListener` 인터페이스/프로토콜을 통해 수신합니다.
+
+**Android** — `ReactNativeActivity`를 상속한 Activity에서 `onEvent`를 오버라이드합니다.
+
+```kotlin
+class MyActivity : ReactNativeActivity() {
+    override fun onEvent(eventName: String, data: Map<String, Any?>) {
+        when (eventName) {
+            "PAYMENT_DONE" -> { /* handle */ }
+        }
+    }
+}
+```
+
+**iOS** — `BridgeLibViewController` 서브클래스에서 `RNEventListener` 프로토콜을 채택하고 `eventListener`에 self를 할당합니다.
+
+```swift
+class MyViewController: BridgeLibViewController, RNEventListener {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        eventListener = self
+    }
+
+    func onEvent(eventName: String, data: [String: Any]) {
+        switch eventName {
+        case "PAYMENT_DONE": break
+        default: break
+        }
+    }
+}
+```
+
+---
+
 ### `BridgeLib`
 
 번들 모드와 라이브러리 버전 정보를 제공하는 객체입니다.

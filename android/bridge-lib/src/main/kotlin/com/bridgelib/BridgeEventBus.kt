@@ -14,6 +14,13 @@ object BridgeEventBus {
     @Volatile
     private var popToNativeCallback: (() -> Unit)? = null
 
+    @Volatile
+    private var globalEventListener: ((String, Map<String, Any?>) -> Unit)? = null
+
+    fun setGlobalEventListener(listener: ((String, Map<String, Any?>) -> Unit)?) {
+        globalEventListener = listener
+    }
+
     internal fun setModule(module: NativeBridgeModule?) {
         moduleRef = module
         if (module != null) flushQueue(module)
@@ -45,6 +52,7 @@ object BridgeEventBus {
 
     internal fun handleFromRN(eventName: String, data: HashMap<String, Any?>) {
         listeners[eventName]?.invoke(data)
+        globalEventListener?.invoke(eventName, data)
     }
 
     internal fun handlePopToNative() {

@@ -7,6 +7,7 @@ import Foundation
     private let queue = DispatchQueue(label: "com.bridgelib.BridgeEventEmitter", attributes: .concurrent)
     private var listeners: [String: ([String: Any]) -> Void] = [:]
     private var popToNativeCallback: (() -> Void)?
+    private var globalEventListener: ((String, [String: Any]) -> Void)?
 
     private override init() {}
 
@@ -26,9 +27,15 @@ import Foundation
         queue.async(flags: .barrier) { self.listeners.removeValue(forKey: eventName) }
     }
 
+    public func setGlobalEventListener(_ listener: ((String, [String: Any]) -> Void)?) {
+        queue.async(flags: .barrier) { self.globalEventListener = listener }
+    }
+
     internal func handleFromRN(name: String, data: [String: Any]) {
-        // queue.sync → queue.async: 데드락 방지
-        queue.async { self.listeners[name]?(data) }
+        queue.async {
+            self.listeners[name]?(data)
+            self.globalEventListener?(name, data)
+        }
     }
 
     internal func setPopToNativeCallback(_ callback: (() -> Void)?) {
