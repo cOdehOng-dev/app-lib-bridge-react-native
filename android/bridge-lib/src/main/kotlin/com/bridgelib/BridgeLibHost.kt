@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.pm.ApplicationInfo
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactPackage
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
@@ -28,12 +29,19 @@ object BridgeLibHost {
 
             SoLoader.init(application, OpenSourceMergedSoMapping)
 
+            // ReactNativeFeatureFlags를 초기화하고 react_newarchdefaults SO를 로드한다.
+            // 소비 앱이 이미 호출했을 경우(fabricEnabled == true)는 skip.
+            if (!DefaultNewArchitectureEntryPoint.fabricEnabled) {
+                DefaultNewArchitectureEntryPoint.load()
+            }
+
             reactHost = DefaultReactHost.getDefaultReactHost(
                 context = application,
                 packageList = packages + listOf(BridgeLibPackage()),
                 jsMainModulePath = jsMainModulePath,
                 jsBundleAssetPath = bundleConfig.assetPath,
-                jsBundleFilePath = bundleConfig.localBundlePath
+                jsBundleFilePath = bundleConfig.localBundlePath,
+                useDevSupport = isDebug
             )
         }
     }
