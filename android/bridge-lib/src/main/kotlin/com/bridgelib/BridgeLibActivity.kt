@@ -3,6 +3,7 @@ package com.bridgelib
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -43,21 +44,20 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
         val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
         setContentView(surfaceView)
 
-        // ReactSurfaceView는 window inset을 자식 뷰에 전달하지 않아
-        // RNCSafeAreaProvider가 inset을 받지 못한다.
-        // 아래 두 블록이 inset을 직접 전파해 SafeAreaView가 올바른 padding을 계산하게 한다.
+        // AppCompatActivity.setContentView()는 내부적으로 FitWindowsLinearLayout(sub-decor)을
+        // 생성하고, 이 뷰의 fitsSystemWindows=true가 status bar 높이만큼 paddingTop을 추가한다.
+        // 그 결과 ReactSurfaceView가 Y=statusBarHeight에서 시작해 SafeAreaProvider.kt가
+        // top inset을 0으로 계산하게 된다.
+        // setDecorFitsSystemWindows(false)는 Window 레벨만 처리하므로 sub-decor는 영향을 받지 않는다.
+        // 아래 코드가 surfaceView와 DecorView 사이의 모든 부모 뷰의 fitsSystemWindows를 false로
+        // 설정해 padding 추가를 막는다.
         surfaceView.doOnAttach { view ->
-            ViewCompat.getRootWindowInsets(view)?.let { insets ->
-                ViewCompat.dispatchApplyWindowInsets(view, insets)
+            var v: View? = view.parent as? View
+            while (v != null && v !== window.decorView) {
+                v.fitsSystemWindows = false
+                v.setPadding(0, 0, 0, 0)
+                v = v.parent as? View
             }
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(surfaceView) { v, insets ->
-            if (v is ViewGroup) {
-                for (i in 0 until v.childCount) {
-                    ViewCompat.dispatchApplyWindowInsets(v.getChildAt(i), insets)
-                }
-            }
-            insets
         }
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
