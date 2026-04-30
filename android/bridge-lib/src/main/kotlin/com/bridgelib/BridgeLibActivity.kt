@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
@@ -21,6 +22,9 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // edge-to-edge 레이아웃 활성화 → 시스템 window inset이 뷰 계층을 통해
+        // RN SafeAreaProvider까지 전달되어 SafeAreaView가 올바른 padding을 계산함
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val moduleName = intent.getStringExtra(EXTRA_MODULE_NAME)
             ?: throw IllegalArgumentException(
