@@ -6,12 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import com.facebook.react.ReactDelegate
+import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
 class BridgeLibFragment : Fragment() {
 
-    private var reactDelegate: ReactDelegate? = null
+    private var reactSurface: ReactSurface? = null
     private var backCallback: OnBackPressedCallback? = null
 
     var onPopRequested: (() -> Unit)? = null
@@ -34,46 +34,40 @@ class BridgeLibFragment : Fragment() {
             )
         val initialProps = arguments?.getBundle(ARG_INITIAL_PROPS)
 
-        val delegate = ReactDelegate(
-            requireActivity(),
-            BridgeLibHost.getReactHost(),
-            moduleName,
-            initialProps
-        )
-        reactDelegate = delegate
-        delegate.loadApp()
+        val host = BridgeLibHost.getReactHost()
+        val surface = host.createSurface(requireContext(), moduleName, initialProps)
+        reactSurface = surface
+        surface.start()
 
         backCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 // backEnabled=false: 뒤로가기를 RN JS BackHandler에 위임. JS 스택 소진 시 아무 동작 없음.
-                reactDelegate?.onBackPressed()
+                BridgeLibHost.getReactHost().onBackPressed()
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback!!)
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() }
 
-        return checkNotNull(delegate.reactRootView) {
-            "ReactDelegate.reactRootView이 null입니다."
-        }
+        return checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
     }
 
     override fun onResume() {
         super.onResume()
-        if (activity is DefaultHardwareBackBtnHandler) {
-            reactDelegate?.onHostResume()
-        }
+        val activity = activity ?: return
+        val backHandler = activity as? DefaultHardwareBackBtnHandler ?: return
+        BridgeLibHost.getReactHost().onHostResume(activity, backHandler)
     }
 
     override fun onPause() {
         super.onPause()
-        reactDelegate?.onHostPause()
+        BridgeLibHost.getReactHost().onHostPause(activity)
     }
 
     override fun onDestroyView() {
         BridgeEventBus.setPopToNativeCallback(null)
-        reactDelegate?.unloadApp()
-        reactDelegate = null
+        reactSurface?.stop()
+        reactSurface = null
         super.onDestroyView()
     }
 

@@ -4,12 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.facebook.react.ReactDelegate
+import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
 class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
 
-    private var reactDelegate: ReactDelegate? = null
+    private var reactSurface: ReactSurface? = null
 
     var onPopRequested: (() -> Unit)? = null
 
@@ -28,15 +28,11 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
             )
         val initialProps = intent.getBundleExtra(EXTRA_INITIAL_PROPS)
 
-        reactDelegate = ReactDelegate(
-            this,
-            BridgeLibHost.getReactHost(),
-            moduleName,
-            initialProps
-        ).also { delegate ->
-            delegate.loadApp()
-            setContentView(delegate.reactRootView)
-        }
+        val host = BridgeLibHost.getReactHost()
+        val surface = host.createSurface(this, moduleName, initialProps)
+        reactSurface = surface
+        surface.start()
+        setContentView(checkNotNull(surface.view) { "ReactSurface.view가 null입니다." })
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
     }
@@ -49,23 +45,24 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
         if (!backEnabled) return
-        reactDelegate?.onBackPressed()
+        BridgeLibHost.getReactHost().onBackPressed()
     }
 
     override fun onResume() {
         super.onResume()
-        reactDelegate?.onHostResume()
+        BridgeLibHost.getReactHost().onHostResume(this, this)
     }
 
     override fun onPause() {
         super.onPause()
-        reactDelegate?.onHostPause()
+        BridgeLibHost.getReactHost().onHostPause(this)
     }
 
     override fun onDestroy() {
         BridgeEventBus.setPopToNativeCallback(null)
-        reactDelegate?.onHostDestroy()
-        reactDelegate = null
+        reactSurface?.stop()
+        BridgeLibHost.getReactHost().onHostDestroy(this)
+        reactSurface = null
         super.onDestroy()
     }
 
