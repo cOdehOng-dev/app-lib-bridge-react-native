@@ -5,7 +5,7 @@
 소비앱 프로젝트 루트에서 실행합니다. JS 번들 빌드 → AAR 빌드 → Maven 배포 순서로 자동 실행됩니다.
 
 ```bash
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
+./node_modules/@codehong-dev/hongfield/package-android.sh
 ```
 
 > CLI 명령어는 [rn-setup.md — 섹션 6](./rn-setup.md#6-번들-빌드-및-네이티브-패키징)를 참고하세요.

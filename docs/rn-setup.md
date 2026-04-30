@@ -120,20 +120,20 @@ function MyScreen() {
 
 ```bash
 # AAR 빌드 + 로컬 Maven 배포
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib
+./node_modules/@codehong-dev/hongfield/package-android.sh
 
 # AAR만 빌드 (Maven 배포 제외)
-./node_modules/@codehong-dev/hongfield/package-android.sh --module-name bridgelib --skip-maven
+./node_modules/@codehong-dev/hongfield/package-android.sh --skip-maven
 ```
 
 **CLI**
 
 ```bash
 # AAR 빌드
-npx hongfield package:android --variant Release --module-name bridgelib
+npx hongfield package:android --variant Release
 
 # 로컬 Maven 배포 (--version 필수)
-npx hongfield publish:android --module-name bridgelib --version 1.0.0
+npx hongfield publish:android --version 1.0.0
 ```
 
 ### iOS

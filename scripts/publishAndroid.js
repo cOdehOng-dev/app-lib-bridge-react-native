@@ -7,6 +7,9 @@ const os = require('os');
 
 const ABIS = ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'];
 
+// @codehong-dev/hongfield → Gradle 프로젝트명: codehong-dev_hongfield
+const GRADLE_MODULE = 'codehong-dev_hongfield';
+
 function findRootDir() {
   let dir = process.cwd();
   while (dir !== path.parse(dir).root) {
@@ -14,30 +17,6 @@ function findRootDir() {
     dir = path.dirname(dir);
   }
   throw new Error('package.json을 찾을 수 없습니다.');
-}
-
-// settings.gradle에서 ':moduleName' 프로젝트의 절대 경로를 반환
-function findBridgeLibDir(androidDir, moduleName) {
-  const settingsGradle = path.join(androidDir, 'settings.gradle');
-  if (!fs.existsSync(settingsGradle)) {
-    throw new Error(`settings.gradle를 찾을 수 없습니다: ${settingsGradle}`);
-  }
-
-  const content = fs.readFileSync(settingsGradle, 'utf8');
-  const regex = new RegExp(
-    `project\\s*\\(':${moduleName}'\\)\\s*\\.projectDir\\s*=\\s*new File\\([^,]+,\\s*['"]([^'"]+)['"]\\)`
-  );
-  const match = content.match(regex);
-
-  if (!match) {
-    throw new Error(
-      `settings.gradle에서 ':${moduleName}' 프로젝트 경로를 찾을 수 없습니다.\n` +
-      `settings.gradle에 다음 형식의 설정이 필요합니다:\n` +
-      `  project(':${moduleName}').projectDir = new File(rootProject.projectDir, '<경로>')`
-    );
-  }
-
-  return path.resolve(androidDir, match[1]);
 }
 
 function buildJsBundle(rootDir, assetsDir) {
@@ -75,7 +54,6 @@ function findAppModulesSo(appBuildDir) {
       if (item.isDirectory()) {
         search(fullPath);
       } else if (item.isFile() && item.name === 'libappmodules.so') {
-        // 경로에서 ABI 추출 (예: .../arm64-v8a/libappmodules.so)
         const abi = path.basename(path.dirname(fullPath));
         if (ABIS.includes(abi) && !result[abi]) {
           result[abi] = fullPath;
@@ -122,7 +100,7 @@ function copyNativeLibsToJniLibs(androidDir, jniLibsDir) {
   }
 }
 
-function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
+function publishAndroid({ version, repo } = {}) {
   const rootDir = findRootDir();
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
   const androidDir = path.join(rootDir, 'android');
@@ -130,17 +108,18 @@ function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
 
   if (!version) {
     console.error('[bridge-lib] 오류: --version 옵션이 필요합니다.');
-    console.error('[bridge-lib] 예시: npx hongfield publish:android --module-name bridgelib --version 1.0.0');
+    console.error('[bridge-lib] 예시: npx hongfield publish:android --version 1.0.0');
     process.exit(1);
   }
 
   console.log(`\n[bridge-lib] Maven 배포 시작 → ${repoPath} (version: ${version})`);
 
-  const bridgeLibDir = findBridgeLibDir(androidDir, moduleName);
+  // autolinking이 생성한 Gradle 모듈의 소스 경로 (react-native.config.js android.sourceDir 기준)
+  const bridgeLibDir = path.join(rootDir, 'node_modules', '@codehong-dev', 'hongfield', 'android', 'bridge-lib');
   const assetsDir = path.join(bridgeLibDir, 'src', 'main', 'assets');
   const jniLibsDir = path.join(bridgeLibDir, 'src', 'main', 'jniLibs');
 
-  // 1) JS 번들 빌드 → bridge-lib 라이브러리 assets에 포함시켜 AAR에 패키징
+  // 1) JS 번들 빌드 → bridge-lib assets에 포함시켜 AAR에 패키징
   buildJsBundle(rootDir, assetsDir);
 
   // 2) :app 모듈 Native 빌드 → libappmodules.so 생성
@@ -149,9 +128,10 @@ function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
   copyNativeLibsToJniLibs(androidDir, jniLibsDir);
 
   // 3) AAR + 번들 + libappmodules.so Maven 배포
+  //    autolinking이 만든 :codehong-dev_hongfield 모듈을 사용 (:bridgelib과 소스 충돌 방지)
   try {
     execSync(
-      `${gradlew} :${moduleName}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath} -PlibVersion=${version}`,
+      `${gradlew} :${GRADLE_MODULE}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath} -PlibVersion=${version}`,
       { cwd: androidDir, stdio: 'inherit' }
     );
   } catch (err) {
