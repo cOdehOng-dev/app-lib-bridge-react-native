@@ -40,7 +40,7 @@ function buildJsBundle(rootDir, assetsDir) {
 }
 
 /**
- * autolinking.json을 읽어 각 패키지를 빌드하고 로컬 Maven에 배포한다.
+ * autolinking.json을 읽어 각 패키지 AAR을 로컬 Maven에 배포한다.
  * 순수 네이티브 소비앱이 PackageList 없이도 패키지 클래스를 사용할 수 있도록
  * AAR을 ~/.m2/repository에 설치한다.
  */
@@ -69,8 +69,9 @@ function publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath) {
     const pkgVersion = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).version;
 
     // 빌드된 AAR 위치: <sourceDir>/build/outputs/aar/<pkgName>-release.aar
-    // settings.gradle 없는 패키지는 Gradle 복합 빌드명이 소스 디렉터리명('android')으로 결정되어
-    // 태스크 이름이 맞지 않으므로, 메인 빌드 후 이미 생성된 AAR을 우선 사용한다.
+    // AAR 파일명은 npm 패키지명과 동일하다. settings.gradle이 없는 패키지는
+    // Gradle 복합 빌드명이 디렉터리명('android')으로 결정되므로
+    // assembleRelease 태스크 대신 메인 빌드 후 이미 생성된 AAR을 우선 사용한다.
     const aarDir = path.join(sourceDir, 'build', 'outputs', 'aar');
     let aarPath = path.join(aarDir, `${pkgName}-release.aar`);
     if (!fs.existsSync(aarPath)) {
@@ -102,9 +103,8 @@ function publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath) {
     }
 
     // 로컬 Maven에 설치: ~/.m2/repository/com/npm/rn/<pkgName>/<version>/
-    const artifactId = pkgName;
-    installToLocalMaven(aarPath, AUTOLINKING_GROUP_ID, artifactId, pkgVersion, repoPath);
-    published.push({ groupId: AUTOLINKING_GROUP_ID, artifactId, version: pkgVersion });
+    installToLocalMaven(aarPath, AUTOLINKING_GROUP_ID, pkgName, pkgVersion, repoPath);
+    published.push({ groupId: AUTOLINKING_GROUP_ID, artifactId: pkgName, version: pkgVersion });
     console.log(`[bridge-lib] ✓ ${pkgName}@${pkgVersion} → ${repoPath}`);
   }
 
@@ -134,13 +134,80 @@ function installToLocalMaven(aarPath, groupId, artifactId, version, repoPath) {
 </project>`;
   fs.writeFileSync(destPom, pom);
 
-  // md5 / sha1 (Gradle 캐시 무효화 방지)
-  const aarBuf = fs.readFileSync(destAar);
-  fs.writeFileSync(`${destAar}.md5`, crypto.createHash('md5').update(aarBuf).digest('hex'));
-  fs.writeFileSync(`${destAar}.sha1`, crypto.createHash('sha1').update(aarBuf).digest('hex'));
-  const pomBuf = Buffer.from(pom, 'utf8');
-  fs.writeFileSync(`${destPom}.md5`, crypto.createHash('md5').update(pomBuf).digest('hex'));
-  fs.writeFileSync(`${destPom}.sha1`, crypto.createHash('sha1').update(pomBuf).digest('hex'));
+  writeChecksums(destAar, fs.readFileSync(destAar));
+  writeChecksums(destPom, Buffer.from(pom, 'utf8'));
+}
+
+/**
+ * autolinking 패키지들을 hongfield POM / .module 파일의 transitive dependency로 주입한다.
+ *
+ * Gradle maven-publish가 생성한 POM에는 autolinking 패키지가 포함되지 않는다.
+ * (autolinking 패키지는 bridge-lib 의 Gradle 의존성이 아니라 :app 의 의존성이기 때문)
+ * 배포 후 POM과 .module 파일을 직접 수정하여 transitive dep을 삽입한다.
+ */
+function injectTransitiveDeps(repoPath, libVersion, deps) {
+  if (deps.length === 0) return;
+
+  const libDir = path.join(repoPath, 'com', 'hong', 'lib', 'hongfield', libVersion);
+  const baseName = `hongfield-${libVersion}`;
+
+  // ── POM 수정 ──────────────────────────────────────────────────────────────
+  const pomPath = path.join(libDir, `${baseName}.pom`);
+  if (fs.existsSync(pomPath)) {
+    let pom = fs.readFileSync(pomPath, 'utf8');
+
+    const newDepsXml = deps.map(({ groupId, artifactId, version }) =>
+      `    <dependency>\n` +
+      `      <groupId>${groupId}</groupId>\n` +
+      `      <artifactId>${artifactId}</artifactId>\n` +
+      `      <version>${version}</version>\n` +
+      `      <scope>runtime</scope>\n` +
+      `    </dependency>`
+    ).join('\n');
+
+    if (pom.includes('<dependencies>')) {
+      pom = pom.replace('</dependencies>', `${newDepsXml}\n  </dependencies>`);
+    } else {
+      pom = pom.replace('</project>', `  <dependencies>\n${newDepsXml}\n  </dependencies>\n</project>`);
+    }
+
+    fs.writeFileSync(pomPath, pom);
+    writeChecksums(pomPath, Buffer.from(pom, 'utf8'));
+    console.log(`[bridge-lib] ✓ POM transitive dep 주입 완료: ${pomPath}`);
+  }
+
+  // ── .module 수정 (Gradle Metadata — POM보다 우선순위가 높으므로 반드시 수정) ──
+  const modulePath = path.join(libDir, `${baseName}.module`);
+  if (fs.existsSync(modulePath)) {
+    const moduleJson = JSON.parse(fs.readFileSync(modulePath, 'utf8'));
+
+    const newDeps = deps.map(({ groupId, artifactId, version }) => ({
+      group: groupId,
+      module: artifactId,
+      version: { requires: version },
+    }));
+
+    (moduleJson.variants || []).forEach(variant => {
+      if (!Array.isArray(variant.dependencies)) variant.dependencies = [];
+      // 중복 방지: 이미 주입된 항목은 건너뜀
+      for (const dep of newDeps) {
+        const exists = variant.dependencies.some(
+          d => d.group === dep.group && d.module === dep.module
+        );
+        if (!exists) variant.dependencies.push(dep);
+      }
+    });
+
+    const moduleContent = JSON.stringify(moduleJson, null, 2);
+    fs.writeFileSync(modulePath, moduleContent);
+    writeChecksums(modulePath, Buffer.from(moduleContent, 'utf8'));
+    console.log(`[bridge-lib] ✓ .module transitive dep 주입 완료: ${modulePath}`);
+  }
+}
+
+function writeChecksums(filePath, buf) {
+  fs.writeFileSync(`${filePath}.md5`, crypto.createHash('md5').update(buf).digest('hex'));
+  fs.writeFileSync(`${filePath}.sha1`, crypto.createHash('sha1').update(buf).digest('hex'));
 }
 
 function publishAndroid({ version, repo } = {}) {
@@ -172,9 +239,6 @@ function publishAndroid({ version, repo } = {}) {
   buildJsBundle(rootDir, assetsDir);
 
   // 2) 메인 AAR 빌드 및 Maven 배포
-  //    externalNativeBuild가 bridge-lib/src/main/jni/CMakeLists.txt를 사용해
-  //    libappmodules.so를 빌드하고 AAR에 자동으로 패키징한다.
-  //    libappmodules.so는 javaModuleProvider를 설정해 DeviceInfo 등 코어 TurboModule을 활성화한다.
   try {
     execSync(
       `${gradlew} :${GRADLE_MODULE}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath} -PlibVersion=${version}`,
@@ -187,22 +251,20 @@ function publishAndroid({ version, repo } = {}) {
 
   console.log(`[bridge-lib] ✓ Maven 배포 완료: ${repoPath}/com/hong/lib/hongfield/${version}/`);
 
-  // 3) autolinking 패키지 빌드 및 Maven 배포
-  //    순수 네이티브 소비앱이 PackageList 없이도 패키지 클래스를 classpath에서 찾을 수 있도록
-  //    각 패키지의 AAR을 로컬 Maven에 설치한다.
+  // 3) autolinking 패키지 AAR을 로컬 Maven에 설치
   console.log('\n[bridge-lib] autolinking 패키지 Maven 배포 시작...');
   const published = publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath);
 
+  // 4) 배포된 hongfield POM / .module 파일에 autolinking 패키지를 transitive dep으로 주입
+  //    (autolinking 패키지는 bridge-lib의 Gradle 의존성이 아니므로 Gradle이 자동으로 POM에 추가하지 않음)
   if (published.length > 0) {
-    console.log('\n[bridge-lib] autolinking 패키지 배포 완료:');
-    published.forEach(({ groupId, artifactId, version: v }) => {
-      console.log(`  ✓ ${groupId}:${artifactId}:${v}`);
-    });
-    console.log('[bridge-lib] 이 패키지들은 hongfield POM의 transitive dependency로 선언됩니다.');
-    console.log('[bridge-lib] 소비앱에는 implementation("com.hong.lib:hongfield:<version>") 하나만 추가하세요.');
+    console.log('\n[bridge-lib] hongfield POM / .module에 transitive dep 주입 중...');
+    injectTransitiveDeps(repoPath, version, published);
   }
 
   console.log('[bridge-lib] ✓ 전체 배포 완료\n');
+  console.log('[bridge-lib] 소비앱에는 아래 의존성 하나만 추가하세요:');
+  console.log(`[bridge-lib]   implementation("com.hong.lib:hongfield:${version}")\n`);
 }
 
 module.exports = publishAndroid;
