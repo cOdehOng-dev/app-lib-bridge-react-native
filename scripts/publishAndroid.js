@@ -27,11 +27,10 @@ function publishAndroid({ moduleName = 'bridge-lib', version, repo } = {}) {
   }
 
   console.log(`\n[bridge-lib] Maven 배포 시작 → ${repoPath} (version: ${version})`);
-  const versionArg = ` -PlibVersion=${version}`;
 
   try {
     execSync(
-      `${gradlew} :${moduleName}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath}${versionArg}`,
+      `${gradlew} :${moduleName}:publishMavenAarPublicationToLocalRepository -PmavenRepoPath=${repoPath} -PlibVersion=${version}`,
       { cwd: androidDir, stdio: 'inherit' }
     );
   } catch (err) {
