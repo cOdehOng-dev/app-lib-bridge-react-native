@@ -2,8 +2,8 @@ package com.bridgelib
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
-import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
+import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactHost
 import com.facebook.react.shell.MainReactPackage
@@ -41,9 +41,9 @@ object BridgeLibHost {
             }
 
             // consumer 프로젝트의 autolinking 패키지를 자동으로 포함한다.
-            // PackageList는 @react-native/gradle-plugin이 consumer 빌드 시 생성하므로
-            // 별도 전달 없이 react-native-safe-area-context 등이 자동 등록된다.
-            val autolinkedPackages = PackageList(application).packages
+            // PackageList는 consumer 빌드 시 생성되므로 리플렉션으로 런타임에 조회한다.
+            // AAR 빌드 환경에서는 클래스가 없으므로 예외 시 빈 리스트로 폴백한다.
+            val autolinkedPackages = resolveAutolinkedPackages(application)
 
             reactHost = DefaultReactHost.getDefaultReactHost(
                 context = application,
@@ -60,4 +60,15 @@ object BridgeLibHost {
         ?: throw IllegalStateException(
             "BridgeLibHost가 초기화되지 않았습니다. Application.onCreate()에서 BridgeLibHost.init()을 호출하세요."
         )
+
+    @Suppress("UNCHECKED_CAST")
+    private fun resolveAutolinkedPackages(application: Application): List<ReactPackage> {
+        return try {
+            val clazz = Class.forName("com.facebook.react.PackageList")
+            val instance = clazz.getConstructor(Application::class.java).newInstance(application)
+            clazz.getMethod("getPackages").invoke(instance) as List<ReactPackage>
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 }
