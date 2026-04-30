@@ -2,8 +2,8 @@ package com.bridgelib
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
+import com.facebook.react.PackageList
 import com.facebook.react.ReactHost
-import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactHost
 import com.facebook.react.shell.MainReactPackage
@@ -18,7 +18,6 @@ object BridgeLibHost {
     fun init(
         application: Application,
         bundleConfig: BundleConfig = BundleConfig(),
-        packages: List<ReactPackage> = emptyList(),
         jsMainModulePath: String = "index"
     ) {
         if (reactHost != null) return
@@ -41,9 +40,14 @@ object BridgeLibHost {
                 DefaultNewArchitectureEntryPoint.load()
             }
 
+            // consumer 프로젝트의 autolinking 패키지를 자동으로 포함한다.
+            // PackageList는 @react-native/gradle-plugin이 consumer 빌드 시 생성하므로
+            // 별도 전달 없이 react-native-safe-area-context 등이 자동 등록된다.
+            val autolinkedPackages = PackageList(application).packages
+
             reactHost = DefaultReactHost.getDefaultReactHost(
                 context = application,
-                packageList = listOf(MainReactPackage()) + packages + listOf(BridgeLibPackage()),
+                packageList = listOf(MainReactPackage()) + autolinkedPackages + listOf(BridgeLibPackage()),
                 jsMainModulePath = jsMainModulePath,
                 jsBundleAssetPath = bundleConfig.assetPath,
                 jsBundleFilePath = bundleConfig.localBundlePath,

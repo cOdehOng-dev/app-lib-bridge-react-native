@@ -120,7 +120,7 @@ includeBuild('../node_modules/@react-native/gradle-plugin')
 
 ## 4. Application 초기화
 
-기본값으로 자동 설정되므로 대부분의 경우 한 줄로 충분합니다:
+`BridgeLibHost.init()`은 소비앱의 autolinking 패키지(`PackageList`)를 내부에서 자동으로 포함한다. 별도로 패키지를 전달할 필요 없다.
 
 ```kotlin
 class MyApplication : Application() {
@@ -131,7 +131,7 @@ class MyApplication : Application() {
 }
 ```
 
-커스텀이 필요한 경우 `BundleConfig`를 전달합니다:
+커스텀 번들 설정이 필요한 경우:
 
 ```kotlin
 BridgeLibHost.init(
