@@ -3,8 +3,11 @@ package com.bridgelib
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.doOnAttach
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
 
@@ -36,7 +39,26 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
         val surface = host.createSurface(this, moduleName, initialProps)
         reactSurface = surface
         surface.start()
-        setContentView(checkNotNull(surface.view) { "ReactSurface.view가 null입니다." })
+
+        val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
+        setContentView(surfaceView)
+
+        // ReactSurfaceView는 window inset을 자식 뷰에 전달하지 않아
+        // RNCSafeAreaProvider가 inset을 받지 못한다.
+        // 아래 두 블록이 inset을 직접 전파해 SafeAreaView가 올바른 padding을 계산하게 한다.
+        surfaceView.doOnAttach { view ->
+            ViewCompat.getRootWindowInsets(view)?.let { insets ->
+                ViewCompat.dispatchApplyWindowInsets(view, insets)
+            }
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(surfaceView) { v, insets ->
+            if (v is ViewGroup) {
+                for (i in 0 until v.childCount) {
+                    ViewCompat.dispatchApplyWindowInsets(v.getChildAt(i), insets)
+                }
+            }
+            insets
+        }
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
     }
