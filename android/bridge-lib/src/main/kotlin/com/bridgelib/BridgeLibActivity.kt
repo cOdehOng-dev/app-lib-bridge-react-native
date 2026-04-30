@@ -44,34 +44,6 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
         val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
         setContentView(surfaceView)
 
-        // AppCompatActivity의 sub-decor(FitWindowsLinearLayout)가 fitsSystemWindows=true로
-        // paddingTop을 추가해 ReactSurfaceView를 y=statusBarHeight에 위치시킨다.
-        // setDecorFitsSystemWindows(false)는 Window 레벨만 처리하므로 sub-decor는 미처리된다.
-        // surfaceView와 DecorView 사이 모든 부모 뷰의 fitsSystemWindows를 제거해 y=0 배치를 보장한다.
-        surfaceView.doOnAttach { view ->
-            var v: View? = view.parent as? View
-            while (v != null && v !== window.decorView) {
-                v.fitsSystemWindows = false
-                v.setPadding(0, 0, 0, 0)
-                v = v.parent as? View
-            }
-        }
-
-        // Fabric이 layout()을 완료한 뒤 draw가 발생해야 SafeAreaProvider의 onPreDraw가 실행된다.
-        // 자식 뷰가 마운트된 첫 global layout 이후 postInvalidate()로 draw를 유도한다.
-        surfaceView.viewTreeObserver.addOnGlobalLayoutListener(
-            object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if ((surfaceView as? ViewGroup)?.childCount ?: 0 > 0) {
-                        surfaceView.viewTreeObserver
-                            .takeIf { it.isAlive }
-                            ?.removeOnGlobalLayoutListener(this)
-                        surfaceView.postInvalidate()
-                    }
-                }
-            }
-        )
-
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
     }
 

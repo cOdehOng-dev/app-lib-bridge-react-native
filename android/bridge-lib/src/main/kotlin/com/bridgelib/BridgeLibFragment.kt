@@ -52,22 +52,6 @@ class BridgeLibFragment : Fragment() {
 
         val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
 
-        // SafeAreaProvider는 OnPreDrawListener로 inset을 계산한다.
-        // Fabric이 layout()을 완료한 뒤 draw가 발생해야 onPreDraw가 실행되므로,
-        // 자식 뷰가 마운트된 첫 global layout 이후 postInvalidate()로 draw를 유도한다.
-//        surfaceView.viewTreeObserver.addOnGlobalLayoutListener(
-//            object : ViewTreeObserver.OnGlobalLayoutListener {
-//                override fun onGlobalLayout() {
-//                    if ((surfaceView as? ViewGroup)?.childCount ?: 0 > 0) {
-//                        surfaceView.viewTreeObserver
-//                            .takeIf { it.isAlive }
-//                            ?.removeOnGlobalLayoutListener(this)
-//                        surfaceView.postInvalidate()
-//                    }
-//                }
-//            }
-//        )
-
         return surfaceView
     }
 
