@@ -194,14 +194,12 @@ function publishAndroid({ version, repo } = {}) {
   const published = publishAutolinkingPackages(rootDir, androidDir, gradlew, repoPath);
 
   if (published.length > 0) {
-    console.log('\n========================================');
-    console.log(' 순수 네이티브 앱 build.gradle.kts 의존성');
-    console.log('========================================');
-    console.log('아래 의존성을 소비앱 build.gradle.kts에 추가하세요:\n');
+    console.log('\n[bridge-lib] autolinking 패키지 배포 완료:');
     published.forEach(({ groupId, artifactId, version: v }) => {
-      console.log(`  implementation("${groupId}:${artifactId}:${v}")`);
+      console.log(`  ✓ ${groupId}:${artifactId}:${v}`);
     });
-    console.log('');
+    console.log('[bridge-lib] 이 패키지들은 hongfield POM의 transitive dependency로 선언됩니다.');
+    console.log('[bridge-lib] 소비앱에는 implementation("com.hong.lib:hongfield:<version>") 하나만 추가하세요.');
   }
 
   console.log('[bridge-lib] ✓ 전체 배포 완료\n');
