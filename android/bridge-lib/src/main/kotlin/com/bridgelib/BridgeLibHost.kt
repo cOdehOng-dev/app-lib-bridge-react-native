@@ -18,6 +18,7 @@ object BridgeLibHost {
     fun init(
         application: Application,
         bundleConfig: BundleConfig = BundleConfig(),
+        packages: List<ReactPackage> = emptyList(),
         jsMainModulePath: String = "index"
     ) {
         if (reactHost != null) return
@@ -40,14 +41,13 @@ object BridgeLibHost {
                 DefaultNewArchitectureEntryPoint.load()
             }
 
-            // consumer 프로젝트의 autolinking 패키지를 자동으로 포함한다.
-            // PackageList는 consumer 빌드 시 생성되므로 리플렉션으로 런타임에 조회한다.
-            // AAR 빌드 환경에서는 클래스가 없으므로 예외 시 빈 리스트로 폴백한다.
+            // autolinking 패키지: PackageList는 consumer 빌드 시 생성되므로 리플렉션으로 조회한다.
+            // 순수 네이티브 앱 등 PackageList가 없는 환경에서는 빈 리스트로 폴백한다.
             val autolinkedPackages = resolveAutolinkedPackages(application)
 
             reactHost = DefaultReactHost.getDefaultReactHost(
                 context = application,
-                packageList = listOf(MainReactPackage()) + autolinkedPackages + listOf(BridgeLibPackage()),
+                packageList = listOf(MainReactPackage()) + autolinkedPackages + packages + listOf(BridgeLibPackage()),
                 jsMainModulePath = jsMainModulePath,
                 jsBundleAssetPath = bundleConfig.assetPath,
                 jsBundleFilePath = bundleConfig.localBundlePath,

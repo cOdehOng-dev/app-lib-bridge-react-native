@@ -120,13 +120,33 @@ includeBuild('../node_modules/@react-native/gradle-plugin')
 
 ## 4. Application 초기화
 
-`BridgeLibHost.init()`은 소비앱의 autolinking 패키지(`PackageList`)를 내부에서 자동으로 포함한다. 별도로 패키지를 전달할 필요 없다.
+### RN 프로젝트 (autolinking 사용) — 권장
+
+`@react-native/gradle-plugin`으로 autolinking이 설정된 프로젝트는 `packages` 없이 한 줄로 초기화된다. `react-native-safe-area-context` 등 autolinking 패키지는 내부에서 자동으로 포함된다.
 
 ```kotlin
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         BridgeLibHost.init(application = this)
+    }
+}
+```
+
+### 순수 네이티브 앱 (autolinking 없음)
+
+RN 프로젝트 없이 AAR만 사용하는 경우 `PackageList`가 생성되지 않으므로, RN 화면에서 사용하는 패키지를 `packages`로 직접 전달한다.
+
+```kotlin
+import com.th3rdwave.safeareacontext.SafeAreaContextPackage
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        BridgeLibHost.init(
+            application = this,
+            packages = listOf(SafeAreaContextPackage())
+        )
     }
 }
 ```
@@ -139,6 +159,9 @@ BridgeLibHost.init(
     bundleConfig = BundleConfig(localBundlePath = localOtaBundlePath)
 )
 ```
+
+> **`RNCSafeAreaProvider` 에러가 발생한다면**
+> 소비앱에 autolinking이 설정되지 않은 환경이다. `packages = listOf(SafeAreaContextPackage())` 를 추가하거나, [방법 C (Autolinking)](#방법-c-autolinking-rn-소스-빌드-프로젝트)를 참고해 autolinking을 설정한다.
 
 > **자동 설정 기본값**
 > - `assetPath`: `"index.android.bundle"`
