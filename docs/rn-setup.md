@@ -154,23 +154,13 @@ npx hongfield package:ios --scheme BridgeLib --configuration Release
 npx hongfield publish:ios --version 1.0.0
 ```
 
-## 7. Codegen 설정 확인
+## 7. Codegen 설정
 
-hongfield의 `package.json`에 이미 포함되어 있으므로 소비 프로젝트에서 별도로 추가할 필요 없다:
-
-```json
-{
-  "codegenConfig": {
-    "name": "NativeBridgeModuleSpec",
-    "type": "modules",
-    "jsSrcsDir": "src/specs"
-  }
-}
-```
+`NativeBridgeModule`은 레거시 아키텍처 방식(`ReactContextBaseJavaModule`)으로 구현되어 있으므로 `codegenConfig`를 사용하지 않는다. New Architecture에서는 레거시 인터롭 레이어를 통해 자동으로 동작한다.
 
 ### Autolinking 사용 시 (권장)
 
-소비 프로젝트의 `android/settings.gradle`에 `autolinkLibrariesFromCommand()`가 선언되어 있으면 Codegen이 자동으로 실행된다:
+소비 프로젝트의 `android/settings.gradle`에 `autolinkLibrariesFromCommand()`가 선언되어 있으면 네이티브 모듈이 자동으로 링크된다:
 
 ```groovy
 plugins { id("com.facebook.react.settings") }
@@ -179,11 +169,9 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 }
 ```
 
-`autolinkLibrariesFromCommand()`는 `node_modules`를 스캔해 `react-native.config.js`가 활성화된 패키지를 찾고, 해당 패키지의 `codegenConfig`를 기반으로 Codegen을 자동 실행한다.
-
 ### AAR 소비 시 (autolinking 없음)
 
-순수 네이티브 앱에서 AAR만 사용하는 경우 Codegen은 실행할 필요 없다. 네이티브 브리지 코드가 이미 AAR에 컴파일되어 포함되어 있다.
+순수 네이티브 앱에서 AAR만 사용하는 경우 별도 Codegen 설정이 필요 없다. 네이티브 브리지 코드가 이미 AAR에 컴파일되어 포함되어 있다.
 
 ## 8. iOS Framework 타겟 설정 (Xcode, 최초 1회)
 
