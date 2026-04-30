@@ -5,8 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.doOnAttach
 import com.facebook.react.interfaces.fabric.ReactSurface
@@ -44,13 +44,10 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
         val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
         setContentView(surfaceView)
 
-        // AppCompatActivity.setContentView()는 내부적으로 FitWindowsLinearLayout(sub-decor)을
-        // 생성하고, 이 뷰의 fitsSystemWindows=true가 status bar 높이만큼 paddingTop을 추가한다.
-        // 그 결과 ReactSurfaceView가 Y=statusBarHeight에서 시작해 SafeAreaProvider.kt가
-        // top inset을 0으로 계산하게 된다.
-        // setDecorFitsSystemWindows(false)는 Window 레벨만 처리하므로 sub-decor는 영향을 받지 않는다.
-        // 아래 코드가 surfaceView와 DecorView 사이의 모든 부모 뷰의 fitsSystemWindows를 false로
-        // 설정해 padding 추가를 막는다.
+        // AppCompatActivity의 sub-decor(FitWindowsLinearLayout)가 fitsSystemWindows=true로
+        // paddingTop을 추가해 ReactSurfaceView를 y=statusBarHeight에 위치시킨다.
+        // setDecorFitsSystemWindows(false)는 Window 레벨만 처리하므로 sub-decor는 미처리된다.
+        // surfaceView와 DecorView 사이 모든 부모 뷰의 fitsSystemWindows를 제거해 y=0 배치를 보장한다.
         surfaceView.doOnAttach { view ->
             var v: View? = view.parent as? View
             while (v != null && v !== window.decorView) {
@@ -59,6 +56,21 @@ class BridgeLibActivity : AppCompatActivity(), DefaultHardwareBackBtnHandler {
                 v = v.parent as? View
             }
         }
+
+        // Fabric이 layout()을 완료한 뒤 draw가 발생해야 SafeAreaProvider의 onPreDraw가 실행된다.
+        // 자식 뷰가 마운트된 첫 global layout 이후 postInvalidate()로 draw를 유도한다.
+        surfaceView.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if ((surfaceView as? ViewGroup)?.childCount ?: 0 > 0) {
+                        surfaceView.viewTreeObserver
+                            .takeIf { it.isAlive }
+                            ?.removeOnGlobalLayoutListener(this)
+                        surfaceView.postInvalidate()
+                    }
+                }
+            }
+        )
 
         BridgeEventBus.setPopToNativeCallback { onPopRequested?.invoke() ?: finish() }
     }

@@ -4,9 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.activity.OnBackPressedCallback
-import androidx.core.view.ViewCompat
-import androidx.core.view.doOnAttach
 import androidx.fragment.app.Fragment
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
@@ -53,20 +52,21 @@ class BridgeLibFragment : Fragment() {
 
         val surfaceView = checkNotNull(surface.view) { "ReactSurface.view가 null입니다." }
 
-        // 호스트 Activity가 inset을 소비했더라도 Window 루트에서 직접 읽어 SafeAreaProvider로 전달
-        surfaceView.doOnAttach { view ->
-            ViewCompat.getRootWindowInsets(view)?.let { insets ->
-                ViewCompat.dispatchApplyWindowInsets(view, insets)
-            }
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(surfaceView) { v, insets ->
-            if (v is ViewGroup) {
-                for (i in 0 until v.childCount) {
-                    ViewCompat.dispatchApplyWindowInsets(v.getChildAt(i), insets)
+        // SafeAreaProvider는 OnPreDrawListener로 inset을 계산한다.
+        // Fabric이 layout()을 완료한 뒤 draw가 발생해야 onPreDraw가 실행되므로,
+        // 자식 뷰가 마운트된 첫 global layout 이후 postInvalidate()로 draw를 유도한다.
+        surfaceView.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if ((surfaceView as? ViewGroup)?.childCount ?: 0 > 0) {
+                        surfaceView.viewTreeObserver
+                            .takeIf { it.isAlive }
+                            ?.removeOnGlobalLayoutListener(this)
+                        surfaceView.postInvalidate()
+                    }
                 }
             }
-            insets
-        }
+        )
 
         return surfaceView
     }
