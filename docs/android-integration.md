@@ -84,6 +84,25 @@ dependencies {
 
 > `react-android` / `hermes-android`는 hongfield POM에 명시되어 있어 Gradle이 Maven Central에서 자동으로 받아온다. 직접 선언할 필요 없다.
 
+### 방법 C: Autolinking (RN 소스 빌드 프로젝트)
+
+RN 프로젝트에서 AAR 대신 소스를 직접 빌드하는 경우 autolinking을 사용한다. `react-native.config.js`가 `android.sourceDir`을 선언하고 있으므로 `autolinkLibrariesFromCommand()`가 자동으로 native module을 링크하고 Codegen을 실행한다.
+
+**android/settings.gradle**
+
+```groovy
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+rootProject.name = 'MyApp'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+```
+
+> 수동으로 `include ':bridgelib'`와 `project(':bridgelib').projectDir`을 선언했다면 제거한다. autolinking과 중복되어 빌드 오류가 발생한다.
+
 ## 3. AndroidManifest.xml 설정
 
 ```xml
